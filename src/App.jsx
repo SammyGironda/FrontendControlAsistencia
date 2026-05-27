@@ -1,13 +1,36 @@
-export default function App() {
+import React from 'react';
+import { Routes, Route } from 'react-router-dom';
+import PrivateRoute from './components/common/PrivateRoute';
+import MainLayout from './components/layout/MainLayout';
+import Login from './pages/Login';
+import Dashboard from './pages/Dashboard';
+import EmpleadosListado from './pages/EmpleadosListado';
+import EmpleadoForm from './pages/EmpleadoForm';
+import IngestaExcel from './pages/IngestaExcel';
+import AsistenciaDiaria from './pages/AsistenciaDiaria';
+import Reportes from './pages/Reportes';
+import Configuracion from './pages/Configuracion';
+
+function App() {
   return (
-    <div className="min-h-screen bg-surface flex items-center justify-center">
-      <div className="bg-primary text-white p-8 rounded-lg shadow-lg">
-        <h1 className="text-3xl font-bold mb-4">RRHH Bolivia</h1>
-        <p className="mb-4">Los colores personalizados funcionan ✓</p>
-        <button className="bg-accent text-primary font-bold px-6 py-2 rounded hover:bg-accent-hover">
-          Botón con color acento
-        </button>
-      </div>
-    </div>
-  )
+    <Routes>
+      <Route path="/login" element={<Login />} />
+
+      <Route element={<PrivateRoute />}>
+        <Route element={<MainLayout />}>
+          <Route index element={<Dashboard />} />
+          <Route path="/empleados" element={<EmpleadosListado />} />
+          <Route path="/empleados/nuevo" element={<EmpleadoForm />} />
+          <Route path="/empleados/:id" element={<EmpleadoForm />} />
+          <Route path="/marcaciones" element={<IngestaExcel />} />
+          <Route path="/asistencia" element={<AsistenciaDiaria />} />
+          <Route path="/reportes" element={<Reportes />} />
+          <Route path="/configuracion" element={<Configuracion />} />
+          {/* Add more private routes here */}
+        </Route>
+      </Route>
+    </Routes>
+  );
 }
+
+export default App;

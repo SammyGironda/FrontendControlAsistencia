@@ -6,7 +6,7 @@ import Login from './pages/auth/Login';
 import Dashboard from './pages/dashboard/Dashboard';
 import EmpleadosListado from './pages/empleados/EmpleadosListado';
 import EmpleadoForm from './pages/empleados/EmpleadoForm';
-import IngestaExcel from './pages/IngestaExcel';
+import IngestaExcel from './pages/marcaciones/IngestaExcel';
 import AsistenciaDiaria from './pages/AsistenciaDiaria';
 import Reportes from './pages/Reportes';
 import Configuracion from './pages/Configuracion';
@@ -23,6 +23,7 @@ function App() {
           <Route path="/empleados/nuevo" element={<EmpleadoForm />} />
           <Route path="/empleados/:id" element={<EmpleadoForm />} />
           <Route path="/marcaciones" element={<IngestaExcel />} />
+          <Route path="/ingesta" element={<IngestaExcel />} />
           <Route path="/asistencia" element={<AsistenciaDiaria />} />
           <Route path="/reportes" element={<Reportes />} />
           <Route path="/configuracion" element={<Configuracion />} />

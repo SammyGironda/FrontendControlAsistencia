@@ -107,12 +107,12 @@ const EmpleadoForm = () => {
 
   const handleClose = () => navigate('/empleados');
 
-  if (!isNew && isLoadingEmpleado) return <div className="fixed inset-0 bg-white/80 flex items-center justify-center">Cargando...</div>;
+  if (!isNew && isLoadingEmpleado) return <div className="fixed inset-0 bg-white/80 flex items-center justify-center z-50">Cargando...</div>;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 animate-fade-in">
-      <div className="bg-white rounded-lg shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col animate-slide-up">
-        <header className="flex justify-between items-center p-4 border-b border-gray-200">
+    <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-2 sm:p-4 z-50 animate-fade-in">
+      <div className="bg-white rounded-lg shadow-2xl w-full max-w-lg md:max-w-2xl lg:max-w-3xl max-h-[95vh] flex flex-col animate-slide-up">
+        <header className="flex justify-between items-center p-4 border-b border-gray-200 sticky top-0 bg-white rounded-t-lg z-10">
           <h2 className="text-lg font-semibold text-gray-800">{isNew ? 'Nuevo Empleado' : 'Editar Empleado'}</h2>
           <button onClick={handleClose} className="text-gray-400 hover:text-gray-600">
             <X size={24} />
@@ -120,7 +120,7 @@ const EmpleadoForm = () => {
         </header>
 
         <form onSubmit={handleSubmit(onSubmit)} className="flex-grow overflow-y-auto">
-          <div className="p-6 space-y-8">
+          <div className="p-4 sm:p-6 space-y-8">
             {/* Datos de Identidad */}
             <section>
               <h3 className="text-sm font-semibold text-blue-700 uppercase tracking-wide border-l-4 border-blue-700 pl-3 mb-6">
@@ -163,11 +163,11 @@ const EmpleadoForm = () => {
             </section>
           </div>
           
-          <footer className="flex justify-end space-x-4 p-4 bg-gray-50 border-t border-gray-200 sticky bottom-0">
-            <button type="button" onClick={handleClose} className="px-6 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400">
+          <footer className="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-4 p-4 bg-gray-50 border-t border-gray-200 sticky bottom-0 rounded-b-lg">
+            <button type="button" onClick={handleClose} className="w-full sm:w-auto mt-2 sm:mt-0 px-6 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400">
               Cancelar
             </button>
-            <button type="submit" disabled={isSubmitting || isCreating || isUpdating} className="px-6 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+            <button type="submit" disabled={isSubmitting || isCreating || isUpdating} className="w-full sm:w-auto px-6 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
               {isSubmitting ? 'Registrando...' : (isNew ? 'Registrar Empleado' : 'Guardar Cambios')}
             </button>
           </footer>

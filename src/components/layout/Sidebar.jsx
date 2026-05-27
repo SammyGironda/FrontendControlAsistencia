@@ -29,7 +29,7 @@ const Sidebar = () => {
   };
 
   return (
-    <div className="w-60 bg-[#03178C] text-white flex flex-col h-screen fixed">
+    <div className="w-60 bg-[#03178C] text-white flex flex-col h-screen fixed top-0 left-0 z-50">
       <div className="flex items-center justify-center h-16 bg-[#03178C] border-b border-gray-700">
         <Building2 className="h-6 w-6 mr-2" />
         <span className="text-xl font-semibold">RRHH Bolivia</span>

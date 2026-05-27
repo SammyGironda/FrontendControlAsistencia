@@ -41,7 +41,7 @@ const MetricCard = ({ title, value, subtext, icon, children, borderColor, to }) 
       </div>
       <div className="mt-2">
         {value !== null && value !== undefined ? (
-          <p className="text-3xl font-bold text-gray-800">{value}</p>
+          <div className="text-3xl font-bold text-gray-800">{value}</div>
         ) : (
           <div className="h-9 bg-gray-200 rounded w-24 animate-pulse"></div>
         )}

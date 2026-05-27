@@ -24,3 +24,19 @@ export const eliminarEmpleado = async (id) => {
   const response = await client.delete(`/empleados/${id}`);
   return response.data;
 };
+
+export const getCargos = async () => {
+  const { data } = await client.get('/cargos');
+  return data;
+};
+
+export const getDepartamentos = async () => {
+  const { data } = await client.get('/departamentos');
+  return data;
+};
+
+export const getHorarios = async () => {
+  const { data } = await client.get('/horarios');
+  return data;
+};
+

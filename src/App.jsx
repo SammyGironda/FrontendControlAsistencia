@@ -1,4 +1,3 @@
-import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import PrivateRoute from './components/common/PrivateRoute';
 import MainLayout from './components/layout/MainLayout';
@@ -7,9 +6,9 @@ import Dashboard from './pages/dashboard/Dashboard';
 import EmpleadosListado from './pages/empleados/EmpleadosListado';
 import EmpleadoForm from './pages/empleados/EmpleadoForm';
 import IngestaExcel from './pages/marcaciones/IngestaExcel';
-import AsistenciaDiaria from './pages/AsistenciaDiaria';
-import Reportes from './pages/Reportes';
-import Configuracion from './pages/Configuracion';
+import AsistenciaDiaria from './pages/asistencia/AsistenciaDiaria';
+import Reportes from './pages/reportes/Reportes';
+import Configuracion from './pages/configuracion/Configuracion';
 
 function App() {
   return (

@@ -1,32 +1,27 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useEmpleado, useCrearEmpleado, useActualizarEmpleado } from '../../hooks/useEmpleados';
-// import { useCargos, useDepartamentos, useHorarios } from '../../hooks/useConfig'; // Hooks centralizados
+import { getCargos, getDepartamentos } from '../../api/empleados';
 import { toast } from 'react-hot-toast';
-import { format, differenceInYears, differenceInMonths } from 'date-fns';
+import { format } from 'date-fns';
 import { Info, X, ChevronDown, HelpCircle } from 'lucide-react';
 import { Tooltip } from 'react-tooltip';
 
 const empleadoSchema = z.object({
   nombres: z.string().min(2, 'El nombre es muy corto').max(50, 'El nombre es muy largo'),
-  apellido_paterno: z.string().min(2, 'El apellido es muy corto').max(50, 'El apellido es muy largo'),
-  apellido_materno: z.string().max(50, 'El apellido es muy largo').optional(),
+  apellidos: z.string().min(2, 'Los apellidos son muy cortos').max(100, 'Los apellidos son muy largos'),
   fecha_nacimiento: z.string().refine((val) => !isNaN(Date.parse(val)), { message: 'Fecha inválida' }),
   genero: z.string().min(1, 'Género es requerido'),
-  ci: z.string().min(5, 'CI debe tener al menos 5 dígitos').regex(/^[0-9]+$/, "CI debe ser numérico"),
-  ci_extension: z.string().min(1, 'Extensión de CI es requerida'),
-  ci_complemento: z.string().optional(),
+  ci_numero: z.string().min(4, 'CI debe tener al menos 4 dígitos').regex(/^[0-9]+$/, 'CI debe ser numérico'),
+  complemento_dep: z.string().length(2, 'La extensión debe tener 2 caracteres'),
+  ci_sufijo_homonimo: z.string().max(10, 'El sufijo es muy largo').optional().or(z.literal('')),
   fecha_ingreso: z.string().refine((val) => !isNaN(Date.parse(val)), { message: 'Fecha inválida' }),
-  cargo_id: z.string().min(1, 'Cargo es requerido'),
-  departamento_id: z.string().min(1, 'Departamento es requerido'),
-  horario_id: z.string().min(1, 'Turno es requerido'),
-  salario_base: z.preprocess(
-    (a) => parseFloat(z.string().parse(a)),
-    z.number().positive('El salario debe ser un número positivo')
-  ),
+  id_cargo: z.string().min(1, 'Cargo es requerido'),
+  id_departamento: z.string().min(1, 'Departamento es requerido'),
+  salario_base: z.string().optional(),
   email: z.string().email('Email inválido').optional().or(z.literal('')),
   telefono: z.string().optional(),
 });
@@ -37,31 +32,52 @@ const EmpleadoForm = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const isNew = !id;
+  const [cargos, setCargos] = useState([]);
+  const [departamentos, setDepartamentos] = useState([]);
 
   const { data: empleado, isLoading: isLoadingEmpleado } = useEmpleado(id);
   const { mutate: crearEmpleado, isLoading: isCreating } = useCrearEmpleado();
   const { mutate: actualizarEmpleado, isLoading: isUpdating } = useActualizarEmpleado();
 
-  // Mock data for dropdowns - replace with react-query hooks
-  const { data: cargos } = { data: [{ id: 1, nombre: 'Administradora RRHH' }, { id: 2, nombre: 'Contador Senior' }] };
-  const { data: departamentos } = { data: [{ id: 1, nombre: 'Administración' }, { id: 2, nombre: 'Finanzas' }] };
-  const { data: horarios } = { data: [{ id: 1, nombre: 'Turno Mañana' }, { id: 2, nombre: 'Turno Tarde' }] };
+  useEffect(() => {
+    let mounted = true;
+
+    const loadOptions = async () => {
+      try {
+        const [cargosData, departamentosData] = await Promise.all([
+          getCargos(),
+          getDepartamentos(),
+        ]);
+
+        if (mounted) {
+          setCargos(cargosData);
+          setDepartamentos(departamentosData);
+        }
+      } catch {
+        toast.error('No se pudieron cargar los catálogos de cargos y departamentos.');
+      }
+    };
+
+    loadOptions();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const { register, handleSubmit, control, watch, formState: { errors, isSubmitting }, reset } = useForm({
     resolver: zodResolver(empleadoSchema),
     defaultValues: {
         nombres: '',
-        apellido_paterno: '',
-        apellido_materno: '',
+        apellidos: '',
         fecha_nacimiento: '',
         genero: '',
-        ci: '',
-        ci_extension: '',
-        ci_complemento: '',
+        ci_numero: '',
+        complemento_dep: '',
+        ci_sufijo_homonimo: '',
         fecha_ingreso: '',
-        cargo_id: '',
-        departamento_id: '',
-        horario_id: '',
+        id_cargo: '',
+        id_departamento: '',
         salario_base: '0',
         email: '',
         telefono: '',
@@ -74,10 +90,12 @@ const EmpleadoForm = () => {
         ...empleado,
         fecha_nacimiento: format(new Date(empleado.fecha_nacimiento), 'yyyy-MM-dd'),
         fecha_ingreso: format(new Date(empleado.fecha_ingreso), 'yyyy-MM-dd'),
-        cargo_id: String(empleado.cargo_id),
-        departamento_id: String(empleado.departamento_id),
-        horario_id: String(empleado.horario_id),
-        salario_base: String(empleado.salario_base),
+        id_cargo: String(empleado.id_cargo),
+        id_departamento: String(empleado.id_departamento),
+        ci_sufijo_homonimo: empleado.ci_sufijo_homonimo || '',
+        salario_base: empleado.salario_base ? String(empleado.salario_base) : '',
+        email: empleado.email || '',
+        telefono: empleado.telefono || '',
       });
     }
   }, [empleado, reset]);
@@ -85,10 +103,12 @@ const EmpleadoForm = () => {
   const onSubmit = (data) => {
     const payload = {
         ...data,
-        cargo_id: parseInt(data.cargo_id),
-        departamento_id: parseInt(data.departamento_id),
-        horario_id: parseInt(data.horario_id),
-        salario_base: parseFloat(data.salario_base),
+        id_cargo: parseInt(data.id_cargo, 10),
+        id_departamento: parseInt(data.id_departamento, 10),
+        ci_sufijo_homonimo: data.ci_sufijo_homonimo || null,
+        salario_base: data.salario_base ? parseFloat(data.salario_base) : null,
+        email: data.email || null,
+        telefono: data.telefono || null,
     };
 
     const action = isNew ? crearEmpleado : (d) => actualizarEmpleado({ id, data: d });
@@ -128,13 +148,12 @@ const EmpleadoForm = () => {
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5">
                 <InputField label="Nombres" name="nombres" register={register} errors={errors} required placeholder="Ej: Ana María" />
-                <InputField label="Apellido Paterno" name="apellido_paterno" register={register} errors={errors} required placeholder="Ej: Condori" />
-                <InputField label="Apellido Materno" name="apellido_materno" register={register} errors={errors} placeholder="Ej: Mamani" />
-                <InputField label="Número de CI" name="ci" register={register} errors={errors} required placeholder="Ej: 7823456" info="El CI se valida según estándar SEGIP" />
-                <SelectField label="Extensión CI" name="ci_extension" control={control} errors={errors} options={CI_EXTENSIONS.map(ext => ({ value: ext, label: ext }))} required />
-                <InputField label="Complemento CI" name="ci_complemento" register={register} errors={errors} placeholder="Ej: 1A" tooltip="Opcional. Solo si el SEGIP emitió complemento por homonimia." />
+                <InputField label="Apellidos" name="apellidos" register={register} errors={errors} required placeholder="Ej: Condori Mamani" />
+                <InputField label="Número de CI" name="ci_numero" register={register} errors={errors} required placeholder="Ej: 7823456" info="El CI se valida según estándar SEGIP" />
+                <SelectField label="Extensión CI" name="complemento_dep" control={control} errors={errors} options={CI_EXTENSIONS.map(ext => ({ value: ext, label: ext }))} required />
+                <InputField label="Sufijo homónimo" name="ci_sufijo_homonimo" register={register} errors={errors} placeholder="Ej: 1A" tooltip="Opcional. Solo si el SEGIP emitió sufijo por homonimia." />
                 <InputField label="Fecha de Nacimiento" name="fecha_nacimiento" type="date" register={register} errors={errors} required />
-                <SelectField label="Género" name="genero" control={control} errors={errors} options={[{value: 'MASCULINO', label: 'Masculino'}, {value: 'FEMENINO', label: 'Femenino'}, {value: 'OTRO', label: 'Otro'}]} required />
+                <SelectField label="Género" name="genero" control={control} errors={errors} options={[{value: 'masculino', label: 'Masculino'}, {value: 'femenino', label: 'Femenino'}, {value: 'otro', label: 'Otro'}]} required />
               </div>
             </section>
 
@@ -146,9 +165,8 @@ const EmpleadoForm = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5">
                 <InputField label="Fecha de Ingreso" name="fecha_ingreso" type="date" register={register} errors={errors} required />
                 <InputField label="Salario Base (Bs.)" name="salario_base" type="text" inputMode="decimal" register={register} errors={errors} required placeholder="Ej: 3500.50" />
-                <SelectField label="Cargo / Puesto" name="cargo_id" control={control} errors={errors} options={cargos?.map(c => ({ value: c.id, label: c.nombre })) || []} required />
-                <SelectField label="Área / Departamento" name="departamento_id" control={control} errors={errors} options={departamentos?.map(d => ({ value: d.id, label: d.nombre })) || []} required />
-                <SelectField label="Turno Asignado" name="horario_id" control={control} errors={errors} options={horarios?.map(h => ({ value: h.id, label: h.nombre })) || []} required />
+                <SelectField label="Cargo / Puesto" name="id_cargo" control={control} errors={errors} options={cargos?.map(c => ({ value: c.id, label: c.nombre })) || []} required />
+                <SelectField label="Área / Departamento" name="id_departamento" control={control} errors={errors} options={departamentos?.map(d => ({ value: d.id, label: d.nombre })) || []} required />
               </div>
             </section>
              {/* Datos de Contacto */}

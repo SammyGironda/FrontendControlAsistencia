@@ -1,15 +1,23 @@
-import React from 'react';
-import { useLocation } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { useLocation, Link } from 'react-router-dom';
 import {
   LayoutDashboard, Users, Upload, CalendarCheck,
-  FileText, Settings, ClipboardList, LogOut
+  FileText, Settings, ClipboardList, LogOut, AlertCircle
 } from 'lucide-react';
 import useAuthStore from '../../store/authStore';
+import { getIncidencias } from '../../api/marcaciones';
 
 const navItems = [
   { name: 'Dashboard', icon: LayoutDashboard, path: '/' },
   { name: 'Empleados', icon: Users, path: '/empleados' },
-  { name: 'Ingesta de Marcaciones', icon: Upload, path: '/ingesta' },
+  { 
+    name: 'Ingesta de Marcaciones', 
+    icon: Upload, 
+    path: '/ingesta',
+    subItems: [
+      { name: 'Resolución de Incidencias', icon: AlertCircle, path: '/marcaciones/incidencias' }
+    ] 
+  },
   { name: 'Asistencia y Cálculos', icon: CalendarCheck, path: '/asistencia' },
   { name: 'Reportes', icon: FileText, path: '/reportes' },
   { name: 'Configuración', icon: Settings, path: '/configuracion' },
@@ -18,6 +26,25 @@ const navItems = [
 const Sidebar = () => {
   const { user } = useAuthStore();
   const location = useLocation();
+  const [incidenciasCount, setIncidenciasCount] = useState(0);
+
+  useEffect(() => {
+    const fetchIncidencias = async () => {
+      try {
+        // TODO: Cuando la API soporte filtros, pasar { estado: 'pendiente' }
+        const response = await getIncidencias();
+        setIncidenciasCount(response.total);
+      } catch (error) {
+        console.error("Error fetching incidencias:", error);
+      }
+    };
+
+    fetchIncidencias();
+    const interval = setInterval(fetchIncidencias, 60000); // Actualizar cada minuto
+
+    return () => clearInterval(interval);
+  }, []);
+
 
   const getInitials = (name) => {
     if (!name) return 'U';
@@ -29,7 +56,8 @@ const Sidebar = () => {
   };
 
   const isItemActive = (path) => {
-    return location.pathname === path;
+    if (path === '/') return location.pathname === path;
+    return location.pathname.startsWith(path);
   };
 
   return (
@@ -57,8 +85,8 @@ const Sidebar = () => {
             const isActive = isItemActive(item.path);
             return (
               <li key={item.name}>
-                <a
-                  href={item.path}
+                <Link
+                  to={item.path}
                   className={`flex items-center gap-3 px-4 py-2.5 rounded-lg cursor-pointer transition-colors relative ${
                     isActive
                       ? 'bg-white/10'
@@ -79,10 +107,50 @@ const Sidebar = () => {
                   >
                     {item.name}
                   </span>
-                  {isActive && (
+                  {isActive && !item.subItems && (
                     <div className="absolute right-4 w-1.5 h-1.5 rounded-full bg-[#D9A404]" />
                   )}
-                </a>
+                </Link>
+                {item.subItems && (
+                  <ul className="pl-3 pt-1">
+                    {item.subItems.map(subItem => {
+                      const isSubActive = location.pathname.startsWith(subItem.path);
+                      return (
+                        <li key={subItem.name}>
+                          <Link
+                            to={subItem.path}
+                            className={`flex items-center gap-3 px-4 py-2 rounded-lg cursor-pointer transition-colors relative ${
+                              isSubActive
+                                ? 'bg-white/10'
+                                : 'hover:bg-white/8'
+                            }`}
+                            style={{ paddingLeft: '28px' }} // 12px de indentación extra
+                          >
+                            <subItem.icon
+                              className={`w-4 h-4 flex-shrink-0 ${ // 16px
+                                isSubActive ? 'text-white' : 'text-white/50'
+                              }`}
+                            />
+                            <span
+                              className={`text-[13px] ${ // 13px
+                                isSubActive
+                                  ? 'text-white font-semibold'
+                                  : 'text-white/70'
+                              }`}
+                            >
+                              {subItem.name}
+                            </span>
+                            {incidenciasCount > 0 && (
+                              <span className="ml-auto w-4 h-4 flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full">
+                                {incidenciasCount}
+                              </span>
+                            )}
+                          </Link>
+                        </li>
+                      )
+                    })}
+                  </ul>
+                )}
               </li>
             );
           })}

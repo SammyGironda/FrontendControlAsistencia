@@ -49,6 +49,13 @@ export const getIncidencias = async (params = {}) => {
   };
 };
 
+export const getArchivosExcel = async (params = {}) => {
+  const response = await client.get(`${API_PREFIX}/marcaciones/archivos`, {
+    params,
+  });
+  return response.data;
+};
+
 /**
  * Resuelve una incidencia de marcación.
  * @param {number} id - ID de la incidencia.

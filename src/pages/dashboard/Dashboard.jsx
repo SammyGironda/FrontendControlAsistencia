@@ -85,8 +85,8 @@ const Avatar = ({ name, id }) => (
 const Dashboard = () => {
   // --- API Calls ---
   const { data: empleadosData, isLoading: isLoadingEmpleados, isError: isErrorEmpleados } = useQuery({
-    queryKey: ['empleados', { 'estado': 'Activo' }],
-    queryFn: () => getEmpleados({ estado: 'Activo', limit: 500 })
+    queryKey: ['empleados', { 'estado': 'activo' }],
+    queryFn: () => getEmpleados({ estado: 'activo', limit: 500 })
   });
 
   const { data: asistenciaData, isLoading: isLoadingAsistencia, isError: isErrorAsistencia } = useQuery({
@@ -127,7 +127,7 @@ const Dashboard = () => {
     return { presentes, totalHoy, porcentajeAsistencia: porcentaje, colorBarra: color };
   })();
 
-  const retrasosHoy = isErrorAsistencia ? '—' : (asistenciaData?.items.filter(a => a.retraso_minutos > 0).length || 0);
+  const retrasosHoy = isErrorAsistencia ? '—' : (asistenciaData?.items?.filter(a => a.retraso_minutos > 0).length || 0);
   const alertasPendientes = isErrorIncidencias ? '—' : (incidenciasData?.total || 0);
 
   const isLoading = isLoadingEmpleados || isLoadingAsistencia || isLoadingIncidencias;

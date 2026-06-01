@@ -56,91 +56,82 @@ const MOCK_EMPLOYEES = [
 const BASE_PATTERNS = [
   {
     tipo_dia: 'feriado',
-    estado: 'feriado',
     hora_entrada: '—',
     hora_salida: '—',
     minutos_retraso: null,
-    origen: 'API_Biométrico',
+    origen_dato: 'API_Biometrico',
     observacion: 'Feriado Nacional',
     incidencia: false,
   },
   {
     tipo_dia: 'presente',
-    estado: 'presente',
     hora_entrada: '08:01',
     hora_salida: '17:13',
     minutos_retraso: 0,
-    origen: 'API_Biométrico',
+    origen_dato: 'API_Biometrico',
     observacion: '—',
     incidencia: false,
   },
   {
     tipo_dia: 'presente',
-    estado: 'presente',
     hora_entrada: '08:00',
     hora_salida: '17:01',
     minutos_retraso: 0,
-    origen: 'Excel',
+    origen_dato: 'Excel',
     observacion: '—',
     incidencia: false,
   },
   {
     tipo_dia: 'ausente',
-    estado: 'ausente',
     hora_entrada: '—',
     hora_salida: '—',
     minutos_retraso: null,
-    origen: 'API_Biométrico',
+    origen_dato: 'API_Biometrico',
     observacion: 'Falta injustificada',
     incidencia: true,
   },
   {
     tipo_dia: 'presente',
-    estado: 'retraso',
     hora_entrada: '08:25',
     hora_salida: '17:05',
     minutos_retraso: 25,
-    origen: 'Excel',
+    origen_dato: 'Excel',
     observacion: '25 min tardanza',
     incidencia: true,
   },
   {
     tipo_dia: 'permiso_parcial',
-    estado: 'permiso_parcial',
     hora_entrada: '09:15',
     hora_salida: '12:30',
     minutos_retraso: null,
-    origen: 'Manual',
+    origen_dato: 'Manual',
     observacion: 'Permiso parcial aprobado',
     incidencia: false,
   },
   {
     tipo_dia: 'descanso',
-    estado: 'descanso',
     hora_entrada: '—',
     hora_salida: '—',
     minutos_retraso: null,
-    origen: 'Manual',
+    origen_dato: 'Manual',
     observacion: 'Descanso semanal',
     incidencia: false,
   },
   {
     tipo_dia: 'licencia_medica',
-    estado: 'licencia_medica',
     hora_entrada: '—',
     hora_salida: '—',
     minutos_retraso: null,
-    origen: 'Manual',
+    origen_dato: 'Manual',
     observacion: 'Licencia médica',
     incidencia: false,
   },
   {
     tipo_dia: 'presente_exento',
-    estado: 'presente_exento',
     hora_entrada: '08:00',
     hora_salida: '16:30',
     minutos_retraso: null,
-    origen: 'API_Biométrico',
+    origen_dato: 'API_Biometrico',
     observacion: 'Cobertura excepcional',
     incidencia: false,
   },
@@ -158,18 +149,17 @@ const buildMockRows = () => {
 
       rows.push({
         id: employee.id * 100 + dayIndex + 1,
-        empleadoId: employee.id,
-        empleadoNombre: employee.nombre,
+        id_empleado: employee.id,
+        empleado_nombre: employee.nombre,
         ci: employee.ci,
         fecha: date.format('YYYY-MM-DD'),
-        horaEntrada: pattern.hora_entrada,
-        horaSalida: pattern.hora_salida,
-        minutosRetraso: pattern.minutos_retraso,
-        tipoDia: pattern.tipo_dia,
-        estadoBadge: pattern.estado,
-        origen: pattern.origen,
+        hora_entrada: pattern.hora_entrada,
+        hora_salida: pattern.hora_salida,
+        minutos_retraso: pattern.minutos_retraso,
+        tipo_dia: pattern.tipo_dia,
+        origen_dato: pattern.origen_dato,
         observacion: pattern.observacion,
-        incidenciaPendiente: pattern.incidencia && isEvenEmployee,
+        incidencia_pendiente: pattern.incidencia && isEvenEmployee,
         area: employee.area,
         turno: employee.turno,
       });
@@ -181,6 +171,18 @@ const buildMockRows = () => {
 
 const MOCK_ROWS = buildMockRows();
 
+const normalizeAsistenciaRow = (row) => ({
+  ...row,
+  id_empleado: row.id_empleado ?? row.empleadoId ?? row.empleado_id,
+  tipo_dia: row.tipo_dia ?? row.tipoDia ?? row.estadoBadge ?? row.estado ?? 'presente',
+  hora_entrada: row.hora_entrada ?? row.horaEntrada ?? '—',
+  hora_salida: row.hora_salida ?? row.horaSalida ?? '—',
+  minutos_retraso: row.minutos_retraso ?? row.minutosRetraso ?? 0,
+  origen_dato: row.origen_dato ?? row.origen ?? 'Manual',
+  observacion: row.observacion ?? '—',
+  empleado_nombre: row.empleado_nombre ?? row.empleadoNombre ?? row.nombre ?? 'Empleado',
+});
+
 const FILTER_DEFAULTS = {
   mes: '04',
   anio: '2026',
@@ -191,19 +193,24 @@ const FILTER_DEFAULTS = {
 };
 
 const ROW_COLOR_MAP = {
+  presente: 'bg-white',
   ausente: 'bg-[#FFF5F5]',
   feriado: 'bg-[#EBF4FF]',
+  retraso: 'bg-[#FFFBEB]',
   licencia_medica: 'bg-[#FFF3CD]',
   permiso_parcial: 'bg-[#F8F5D7]',
   descanso: 'bg-[#F1F3F5]',
   presente_exento: 'bg-[#F0FFF4]',
-  retraso: 'bg-[#FFFBEB]',
 };
 
 const ORIGIN_MAP = {
   Excel: {
     className: 'bg-[#EBF4FF] text-[#03178C] border-[#BEE3F8]',
     icon: FileSpreadsheet,
+  },
+  API_Biometrico: {
+    className: 'bg-[#F0FFF4] text-[#376644] border-[#C6F6D5]',
+    icon: Fingerprint,
   },
   API_Biométrico: {
     className: 'bg-[#F0FFF4] text-[#376644] border-[#C6F6D5]',
@@ -255,7 +262,7 @@ const OriginBadge = ({ origin }) => {
   return (
     <span
       className={`inline-flex items-center gap-1 rounded-md border px-2.5 py-1 text-[12px] font-medium ${config.className}`}
-      style={{ background: `linear-gradient(to right, ${origin === 'Excel' ? '#EBF4FF' : origin === 'API_Biométrico' ? '#F0FFF4' : '#F7FAFC'}, rgba(255,255,255,0.15))` }}
+      style={{ background: `linear-gradient(to right, ${origin === 'Excel' ? '#EBF4FF' : origin === 'API_Biometrico' || origin === 'API_Biométrico' ? '#F0FFF4' : '#F7FAFC'}, rgba(255,255,255,0.15))` }}
     >
       <Icon className="h-3 w-3" />
       {origin}
@@ -354,15 +361,16 @@ const AsistenciaDiaria = () => {
     return MOCK_ROWS.filter((row) => {
       if (appliedFilters.mes && dayjs(row.fecha).format('MM') !== appliedFilters.mes) return false;
       if (appliedFilters.anio && dayjs(row.fecha).format('YYYY') !== appliedFilters.anio) return false;
+      // Filtros solo de frontend: el backend de asistencia todavía no expone `area` ni `turno`.
       if (appliedFilters.area !== 'all' && row.area !== appliedFilters.area) return false;
       if (appliedFilters.turno !== 'all' && row.turno !== appliedFilters.turno) return false;
 
       if (appliedFilters.empleadoId) {
-        return String(row.empleadoId) === String(appliedFilters.empleadoId);
+        return String(row.id_empleado) === String(appliedFilters.empleadoId);
       }
 
       if (appliedFilters.empleado) {
-        return row.empleadoNombre.toLowerCase().includes(appliedFilters.empleado.toLowerCase());
+        return row.empleado_nombre.toLowerCase().includes(appliedFilters.empleado.toLowerCase());
       }
 
       return true;
@@ -384,7 +392,7 @@ const AsistenciaDiaria = () => {
     if (!selectedRow) return [];
 
     return filteredRows.filter(
-      (row) => row.empleadoId === selectedRow.empleadoId && dayjs(row.fecha).format('YYYY-MM') === dayjs(selectedRow.fecha).format('YYYY-MM')
+      (row) => row.id_empleado === selectedRow.id_empleado && dayjs(row.fecha).format('YYYY-MM') === dayjs(selectedRow.fecha).format('YYYY-MM')
     );
   }, [filteredRows, selectedRow]);
 
@@ -407,10 +415,10 @@ const AsistenciaDiaria = () => {
   const summary = useMemo(() => {
     const rows = selectedEmployeeMonthRows;
     return {
-      presencias: rows.filter((row) => row.tipoDia === 'presente' || row.tipoDia === 'presente_exento').length,
-      faltas: rows.filter((row) => row.tipoDia === 'ausente').length,
-      retrasos: rows.filter((row) => Number(row.minutosRetraso || 0) > 0).length,
-      vacaciones: rows.filter((row) => row.tipoDia === 'presente_exento').length,
+      presencias: rows.filter((row) => row.tipo_dia === 'presente' || row.tipo_dia === 'presente_exento').length,
+      faltas: rows.filter((row) => row.tipo_dia === 'ausente').length,
+      retrasos: rows.filter((row) => Number(row.minutos_retraso || 0) > 0).length,
+      vacaciones: rows.filter((row) => row.tipo_dia === 'presente_exento').length,
     };
   }, [selectedEmployeeMonthRows]);
 
@@ -437,16 +445,16 @@ const AsistenciaDiaria = () => {
   };
 
   const handleExportView = () => {
-    const header = ['Empleado', 'CI', 'Fecha', 'Hora Entrada', 'Hora Salida', 'Min. Retraso', 'Estado', 'Origen', 'Obs.'];
+    const header = ['Empleado', 'CI', 'Fecha', 'Hora entrada', 'Hora salida', 'Min. retraso', 'Tipo día', 'Origen dato', 'Obs.'];
     const body = filteredRows.map((row) => [
-      row.empleadoNombre,
+      row.empleado_nombre,
       row.ci,
       dayjs(row.fecha).format('DD/MM/YYYY'),
-      row.horaEntrada,
-      row.horaSalida,
-      row.minutosRetraso ? `${row.minutosRetraso} min` : '—',
-      row.estadoBadge,
-      row.origen,
+      row.hora_entrada,
+      row.hora_salida,
+      row.minutos_retraso ? `${row.minutos_retraso} min` : '—',
+      row.tipo_dia,
+      row.origen_dato,
       row.observacion,
     ]);
 
@@ -458,19 +466,20 @@ const AsistenciaDiaria = () => {
   };
 
   const getRowTone = (row) => {
-    if (row.tipoDia === 'ausente') return ROW_COLOR_MAP.ausente;
-    if (row.tipoDia === 'feriado') return ROW_COLOR_MAP.feriado;
-    if (row.tipoDia === 'licencia_medica') return ROW_COLOR_MAP.licencia_medica;
-    if (row.tipoDia === 'permiso_parcial') return ROW_COLOR_MAP.permiso_parcial;
-    if (row.tipoDia === 'descanso') return ROW_COLOR_MAP.descanso;
-    if (row.tipoDia === 'presente_exento') return ROW_COLOR_MAP.presente_exento;
-    if (Number(row.minutosRetraso || 0) > 0) return ROW_COLOR_MAP.retraso;
-    return 'bg-white';
+    if (Number(row.minutos_retraso || 0) > 0) return ROW_COLOR_MAP.retraso;
+    if (row.tipo_dia === 'presente') return ROW_COLOR_MAP.presente;
+    if (row.tipo_dia === 'ausente') return ROW_COLOR_MAP.ausente;
+    if (row.tipo_dia === 'feriado') return ROW_COLOR_MAP.feriado;
+    if (row.tipo_dia === 'licencia_medica') return ROW_COLOR_MAP.licencia_medica;
+    if (row.tipo_dia === 'permiso_parcial') return ROW_COLOR_MAP.permiso_parcial;
+    if (row.tipo_dia === 'descanso') return ROW_COLOR_MAP.descanso;
+    if (row.tipo_dia === 'presente_exento') return ROW_COLOR_MAP.presente_exento;
+    return ROW_COLOR_MAP.presente;
   };
 
   const openEmployeeProfile = () => {
     if (!selectedRow) return;
-    navigate(`/empleados/${selectedRow.empleadoId}`);
+    navigate(`/empleados/${selectedRow.id_empleado}`);
   };
 
   return (
@@ -642,7 +651,7 @@ const AsistenciaDiaria = () => {
             <table className="min-w-[1120px] w-full border-separate border-spacing-0 text-left">
               <thead className="sticky top-0 z-10 bg-slate-50">
                 <tr>
-                  {['Empleado', 'CI', 'Fecha', 'Hora Entrada', 'Hora Salida', 'Min. Retraso', 'Estado del día', 'Origen', 'Obs.'].map((column) => (
+                  {['Empleado', 'CI', 'Fecha', 'Hora entrada', 'Hora salida', 'Min. retraso', 'Tipo día', 'Origen dato', 'Obs.'].map((column) => (
                     <th
                       key={column}
                       className="border-b border-slate-200 px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-slate-500"
@@ -662,7 +671,7 @@ const AsistenciaDiaria = () => {
                   </tr>
                 ) : (
                   paginatedRows.map((row) => {
-                    const isLate = Number(row.minutosRetraso || 0) > 0;
+                    const isLate = Number(row.minutos_retraso || 0) > 0;
 
                     return (
                       <tr
@@ -672,30 +681,30 @@ const AsistenciaDiaria = () => {
                       >
                         <td className="px-4 py-3 text-sm font-medium text-slate-900">
                           <div className="flex items-center gap-2">
-                            <span>{row.empleadoNombre}</span>
-                            {row.incidenciaPendiente && <AlertCircle className="h-4 w-4 text-[#D97706]" />}
+                            <span>{row.empleado_nombre}</span>
+                            {row.incidencia_pendiente && <AlertCircle className="h-4 w-4 text-[#D97706]" />}
                           </div>
                         </td>
                         <td className="px-4 py-3 text-sm text-slate-500">{row.ci}</td>
                         <td className="px-4 py-3 text-sm text-slate-600">{dayjs(row.fecha).format('DD/MM/YYYY')}</td>
                         <td className={`px-4 py-3 text-sm ${isLate ? 'font-bold text-[#D97706]' : 'font-medium text-slate-900'}`}>
-                          {row.horaEntrada || '—'}
+                          {row.hora_entrada || '—'}
                         </td>
-                        <td className="px-4 py-3 text-sm font-medium text-slate-900">{row.horaSalida || '—'}</td>
+                        <td className="px-4 py-3 text-sm font-medium text-slate-900">{row.hora_salida || '—'}</td>
                         <td className="px-4 py-3 text-sm">
                           {isLate ? (
                             <span className="inline-flex items-center rounded-full bg-[#FFFBEB] px-2.5 py-1 text-[12px] font-semibold text-[#D97706]">
-                              {row.minutosRetraso} min
+                              {row.minutos_retraso} min
                             </span>
                           ) : (
                             <span className="text-slate-300">—</span>
                           )}
                         </td>
                         <td className="px-4 py-3">
-                          <EstadoBadge estado={row.estadoBadge} size="sm" />
+                          <EstadoBadge estado={row.tipo_dia} size="sm" />
                         </td>
                         <td className="px-4 py-3">
-                          <OriginBadge origin={row.origen} />
+                          <OriginBadge origin={row.origen_dato} />
                         </td>
                         <td className="px-4 py-3 text-sm italic text-slate-500">{row.observacion || '—'}</td>
                       </tr>
@@ -748,7 +757,7 @@ const AsistenciaDiaria = () => {
             <div className="flex items-start justify-between border-b border-slate-200 px-5 py-4">
               <div>
                 <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Detalle del registro</p>
-                <h3 className="mt-1 text-lg font-bold text-slate-900">{selectedRow.empleadoNombre}</h3>
+                <h3 className="mt-1 text-lg font-bold text-slate-900">{selectedRow.empleado_nombre}</h3>
                 <p className="text-sm text-slate-500">{dayjs(selectedRow.fecha).format('dddd, DD [de] MMMM [de] YYYY')}</p>
               </div>
               <button
@@ -764,7 +773,7 @@ const AsistenciaDiaria = () => {
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
                   <span className="text-[11px] uppercase tracking-wider text-slate-400">Empleado</span>
-                  <p className="mt-1 text-sm font-semibold text-slate-900">{selectedRow.empleadoNombre}</p>
+                  <p className="mt-1 text-sm font-semibold text-slate-900">{selectedRow.empleado_nombre}</p>
                 </div>
                 <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
                   <span className="text-[11px] uppercase tracking-wider text-slate-400">CI</span>
@@ -788,14 +797,14 @@ const AsistenciaDiaria = () => {
                   {calendarCells.map(({ date, row }) => {
                     const dayNumber = date.date();
                     const baseClass = 'flex h-10 items-center justify-center rounded-lg border text-xs font-semibold transition';
-                    const stateClass = row ? ROW_COLOR_MAP[row.tipoDia] || 'bg-white' : 'bg-white text-slate-300';
-                    const accentClass = row?.minutosRetraso > 0 ? 'border-[#F6AD55] text-[#D97706]' : 'border-slate-200 text-slate-700';
+                    const stateClass = row ? ROW_COLOR_MAP[row.tipo_dia] || 'bg-white' : 'bg-white text-slate-300';
+                    const accentClass = row?.minutos_retraso > 0 ? 'border-[#F6AD55] text-[#D97706]' : 'border-slate-200 text-slate-700';
 
                     return (
                       <div
                         key={date.format('YYYY-MM-DD')}
                         className={`${baseClass} ${stateClass} ${row ? accentClass : 'border-slate-200'}`}
-                        title={row ? `${dayNumber} - ${row.estadoBadge}` : dayNumber.toString()}
+                        title={row ? `${dayNumber} - ${row.tipo_dia}` : dayNumber.toString()}
                       >
                         {dayNumber}
                       </div>

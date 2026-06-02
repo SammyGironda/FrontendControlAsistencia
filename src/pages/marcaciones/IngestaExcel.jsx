@@ -3,6 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { AlertTriangle, CheckCircle, Copy, Database, FileSpreadsheet, Loader2, Upload, XCircle } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import Header from '../../components/layout/Header';
+import {
+  subirExcel,
+  crearMarcacion,
+  getMarcacionesHuerfanas,
+  getMarcacionesDuplicadas,
+  getArchivos,
+} from '../../api/marcaciones';
+import useAuthStore from '../../store/authStore';
 
 const mockValidation = {
   totalFilas: 120,
@@ -41,6 +49,7 @@ const IngestaExcel = () => {
   const [validationData, setValidationData] = useState(mockValidation);
   const [orphanRows, setOrphanRows] = useState(mockValidation.huerfanas);
   const [duplicateRows, setDuplicateRows] = useState(mockValidation.duplicados);
+  const [archivos, setArchivos] = useState([]);
   const [openSections, setOpenSections] = useState({
     errores: true,
     huerfanas: false,
@@ -48,6 +57,7 @@ const IngestaExcel = () => {
   });
   const [manualModal, setManualModal] = useState({ open: false, row: null, hora: '' });
   const [isImporting, setIsImporting] = useState(false);
+  const { user } = useAuthStore();
 
   const resumenTexto = useMemo(() => {
     const { totalFilas, correctas, advertencias, errores } = validationData;
@@ -59,6 +69,8 @@ const IngestaExcel = () => {
     setSelectedFile(file);
     setProgress(8);
     setViewState('processing');
+    // start upload
+    doUpload(file);
   };
 
   const handleFileChange = (event) => {
@@ -103,15 +115,80 @@ const IngestaExcel = () => {
 
   const saveManualTime = () => {
     if (!manualModal.row || !manualModal.hora) return;
-    setOrphanRows((prev) =>
-      prev.map((item) =>
-        item.id === manualModal.row.id
-          ? { ...item, resuelta: true, horaCompleta: manualModal.hora }
-          : item
-      )
-    );
+    // Call API to create marcacion manual
+    const row = manualModal.row;
+    const payload = {
+      empleado_id: row.empleado_id ?? row.empleado_id ?? row.empleado?.id ?? null,
+      fecha: row.fecha,
+      hora: manualModal.hora,
+      tipo: row.tipoFaltante ?? row.tipo ?? 'ENTRADA',
+      origen: 'manual',
+    };
+    crearMarcacion(payload)
+      .then(() => {
+        setOrphanRows((prev) => prev.filter((item) => item.id !== row.id));
+        toast.success('Marcación creada');
+        // refresh archivos and lists
+        refreshLists();
+      })
+      .catch(() => {
+        toast.error('Error al crear la marcación');
+      });
     closeManualModal();
   };
+
+  const refreshLists = async () => {
+    try {
+      const [huerfanas, duplicadas, archivosResp] = await Promise.all([
+        getMarcacionesHuerfanas(),
+        getMarcacionesDuplicadas(),
+        getArchivos({ skip: 0, limit: 100 }),
+      ]);
+      setOrphanRows(Array.isArray(huerfanas) ? huerfanas : huerfanas.items ?? []);
+      setDuplicateRows(Array.isArray(duplicadas) ? duplicadas : duplicadas.items ?? []);
+      setArchivos(Array.isArray(archivosResp) ? archivosResp : archivosResp.items ?? []);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const doUpload = async (file) => {
+    try {
+      setIsImporting(true);
+      const resp = await subirExcel(file, { id_subido_por: user?.id ?? user?.empleado_id ?? 1 });
+      // map UploadExcelResponse
+      const errores = resp.errores || resp.filas_con_error || resp.filas_con_errores || resp.errors || [];
+      const totalFilas = resp.total_filas ?? resp.filas_procesadas ?? resp.total ?? mockValidation.totalFilas;
+      const correctas = resp.correctas ?? resp.filas_correctas ?? 0;
+      const advertencias = resp.advertencias ?? 0;
+      const erroresCriticos = Array.isArray(errores) ? errores : [];
+
+      setValidationData((prev) => ({
+        ...prev,
+        totalFilas,
+        correctas,
+        advertencias,
+        errores: erroresCriticos.length,
+        erroresCriticos,
+      }));
+
+      // fetch lists
+      await refreshLists();
+      toast.success('Archivo procesado');
+      setViewState('validation');
+    } catch (err) {
+      console.error(err);
+      toast.error('Error al subir el archivo');
+      setViewState('idle');
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
+  useEffect(() => {
+    // load archivos on mount
+    refreshLists();
+  }, []);
 
   const handleConfirmImport = () => {
     setIsImporting(true);
@@ -136,8 +213,7 @@ const IngestaExcel = () => {
     const timer = setTimeout(() => {
       clearInterval(interval);
       setProgress(100);
-      setViewState('validation');
-      setValidationData(mockValidation);
+      // state transition handled by doUpload
     }, 1600);
 
     return () => {
@@ -194,6 +270,51 @@ const IngestaExcel = () => {
               <div className="rounded-lg bg-gray-100 p-4 text-sm text-gray-600">
                 El archivo Excel debe tener las columnas: CI | Extension | Fecha | Hora | Tipo
                 (ENTRADA/SALIDA)
+              </div>
+              {/* Historial de archivos */}
+              <div className="mt-4 rounded-lg bg-white p-4 border">
+                <h4 className="text-sm font-semibold mb-3">Historial de archivos subidos</h4>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-sm">
+                    <thead className="text-[11px] uppercase tracking-wider text-gray-500">
+                      <tr>
+                        <th className="px-2 py-2">Archivo</th>
+                        <th className="px-2 py-2">Fecha</th>
+                        <th className="px-2 py-2">Filas</th>
+                        <th className="px-2 py-2">Estado</th>
+                        <th className="px-2 py-2">Errores</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {archivos.length === 0 && (
+                        <tr>
+                          <td colSpan={5} className="px-2 py-3 text-xs text-gray-500">No hay archivos</td>
+                        </tr>
+                      )}
+                      {archivos.map((a) => {
+                        const nombre = a.nombre || a.file_name || a.filename || a.archivo || a.name;
+                        const fecha = a.created_at || a.fecha_subida || a.fecha || a.createdAt;
+                        const filas = a.filas_procesadas ?? a.total_filas ?? a.filas ?? '—';
+                        const estado = a.estado_procesamiento || a.estado || a.status || 'pendiente';
+                        const erroresCount = Array.isArray(a.errores) ? a.errores.length : a.errores_count ?? a.errores ?? 0;
+                        return (
+                          <tr key={a.id || nombre} className="border-t border-gray-100 text-gray-600">
+                            <td className="px-2 py-2">{nombre}</td>
+                            <td className="px-2 py-2">{fecha ? new Date(fecha).toLocaleString() : '—'}</td>
+                            <td className="px-2 py-2">{filas}</td>
+                            <td className="px-2 py-2">
+                              {estado === 'pendiente' && <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs">Pendiente</span>}
+                              {estado === 'procesando' && <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs">Procesando</span>}
+                              {estado === 'completado' && <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs">Completado</span>}
+                              {estado === 'error' && <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs">Error</span>}
+                            </td>
+                            <td className="px-2 py-2">{erroresCount}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           )}

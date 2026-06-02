@@ -24,7 +24,7 @@ import dayjs from 'dayjs';
 import 'dayjs/locale/es';
 import { getRetrasosPorMes, getHorasTrabajadasMes, getCumpleanosProximos } from '../../api/dashboard';
 import { getEmpleados, getHorarios } from '../../api/empleados';
-import { getIncidencias, getArchivosExcel } from '../../api/marcaciones';
+import { getIncidenciasPendientes, getArchivos } from '../../api/marcaciones';
 
 dayjs.locale('es');
 
@@ -141,7 +141,7 @@ const Dashboard = () => {
     isError: isErrorIncidencias,
   } = useQuery({
     queryKey: ['dashboard', 'incidenciasPendientes'],
-    queryFn: () => getIncidencias(),
+    queryFn: () => getIncidenciasPendientes(),
     staleTime: 300000,
   });
 
@@ -171,7 +171,7 @@ const Dashboard = () => {
     isError: isErrorArchivos,
   } = useQuery({
     queryKey: ['marcaciones', 'archivos', 1],
-    queryFn: () => getArchivosExcel({ limit: 1, skip: 0 }),
+    queryFn: () => getArchivos(),
     staleTime: 300000,
   });
 

@@ -1,98 +1,80 @@
 import client from './client';
 
-const API_PREFIX = '/api/v1';
-
-export const subirExcel = async (file) => {
+// Subir Excel con marcaciones
+export const subirExcel = async (file, params = {}) => {
   const formData = new FormData();
-  formData.append('file', file);
-  const response = await client.post(`${API_PREFIX}/marcaciones/upload-excel`, formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data',
-    },
-  });
+  formData.append('file', file); // verifica el nombre del campo en el router
+  const response = await client.post(
+    '/api/v1/marcaciones/upload-excel',
+    formData,
+    { params, headers: { 'Content-Type': 'multipart/form-data' } }
+  );
   return response.data;
 };
 
-/**
- * Obtiene las incidencias de marcaciones.
- * @param {object} params - Objeto de parámetros de filtro.
- * @param {string} params.tipo - 'huerfana', 'duplicada', 'inconsistente'.
- * @param {string} params.estado_resolucion - 'pendiente', 'resuelta', 'ignorada'.
- * @param {string} params.busqueda - Término de búsqueda para nombre o CI de empleado.
- */
-export const getIncidencias = async (params = {}) => {
-  // TODO: El backend actualmente solo tiene /incidencias/pendientes.
-  // Se necesita un endpoint más flexible como /incidencias que acepte query params.
-  // const queryParams = new URLSearchParams(params);
-  // const response = await client.get(`${API_PREFIX}/marcaciones/incidencias?${queryParams}`);
-  
-  // Implementación temporal hasta que el backend se actualice
-  const response = await client.get(`${API_PREFIX}/marcaciones/incidencias/pendientes`);
-
-  if (Array.isArray(response.data)) {
-    return {
-      items: response.data,
-      total: response.data.length,
-    };
-  }
-
-  if (response.data && Array.isArray(response.data.items)) {
-    return {
-      items: response.data.items,
-      total: response.data.total ?? response.data.items.length,
-    };
-  }
-
-  return {
-    items: [],
-    total: 0,
-  };
-};
-
-export const getArchivosExcel = async (params = {}) => {
-  const response = await client.get(`${API_PREFIX}/marcaciones/archivos`, {
-    params,
-  });
+// Crear marcación manual
+export const crearMarcacion = async (data) => {
+  const response = await client.post('/api/v1/marcaciones/', data);
   return response.data;
 };
 
-/**
- * Resuelve una incidencia de marcación.
- * @param {number} id - ID de la incidencia.
- * @param {object} data - Datos de la resolución.
- * @param {string} data.estado_resolucion - 'resuelta' o 'ignorada'.
- * @param {string} [data.descripcion_resolucion] - Nota opcional.
- * @param {string} [data.evidencia_url] - URL del archivo de evidencia (si aplica).
- * @param {object} [data.detalle_resolucion] - Objeto con detalles específicos de la acción.
- */
-export const resolverIncidencia = async (id, data) => {
-  // El backend espera un schema IncidenciaMarcacionUpdate
-  const payload = {
-    estado_resolucion: data.estado_resolucion,
-    descripcion_resolucion: data.descripcion_resolucion,
-    // TODO: El backend no parece tener un campo para la acción específica o evidencia_url directamente.
-    // Esto podría necesitar ir en un campo JSON o ser manejado de otra forma.
-    // Por ahora, lo enviamos en la descripción.
-  };
-  const response = await client.put(`${API_PREFIX}/marcaciones/incidencias/${id}`, payload);
+// Marcaciones de un empleado
+export const getMarcacionesEmpleado = async (empleadoId, params) => {
+  const response = await client.get(
+    `/api/v1/marcaciones/empleado/${empleadoId}`,
+    { params }
+  );
   return response.data;
 };
 
-/**
- * Sube un archivo de evidencia para una incidencia.
- * TODO: El backend necesita un endpoint para manejar la subida de archivos de evidencia.
- * @param {File} file - El archivo a subir.
- * @returns {Promise<{url: string}>} - La URL del archivo subido.
- */
-export const subirEvidencia = async (file) => {
-  console.warn("La función subirEvidencia no está implementada en el backend.");
-  const formData = new FormData();
-  formData.append('file', file);
-  
-  // return client.post(`${API_PREFIX}/archivos/upload-evidencia`, formData, {
-  //   headers: { 'Content-Type': 'multipart/form-data' },
-  // });
+// Marcaciones huérfanas
+export const getMarcacionesHuerfanas = async () => {
+  const response = await client.get('/api/v1/marcaciones/huerfanas');
+  return response.data;
+};
 
-  // Mock response
-  return Promise.resolve({ url: `https://example.com/uploads/${file.name}` });
+// Marcaciones duplicadas
+export const getMarcacionesDuplicadas = async () => {
+  const response = await client.get('/api/v1/marcaciones/duplicadas');
+  return response.data;
+};
+
+// Historial de archivos Excel
+export const getArchivos = async (params = {}) => {
+  const response = await client.get('/api/v1/marcaciones/archivos', { params });
+  return response.data;
+};
+
+// Detalle de un archivo
+export const getArchivo = async (archivoId) => {
+  const response = await client.get(
+    `/api/v1/marcaciones/archivos/${archivoId}`
+  );
+  return response.data;
+};
+
+// Actualizar estado de archivo
+export const actualizarArchivo = async (archivoId, data) => {
+  const response = await client.put(
+    `/api/v1/marcaciones/archivos/${archivoId}`,
+    data
+  );
+  return response.data;
+};
+
+// Incidencias pendientes
+export const getIncidenciasPendientes = async () => {
+  const response = await client.get(
+    '/api/v1/marcaciones/incidencias/pendientes'
+  );
+  return response.data;
+};
+
+// Resolver incidencia
+export const resolverIncidencia = async (incidenciaId, data) => {
+  const response = await client.put(
+    `/api/v1/marcaciones/incidencias/${incidenciaId}`,
+    data
+  );
+  return response.data;
 };

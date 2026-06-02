@@ -6,7 +6,7 @@ import {
   SlidersHorizontal, Shield, CalendarX, ChevronDown
 } from 'lucide-react';
 import useAuthStore from '../../store/authStore';
-import { getIncidencias } from '../../api/marcaciones';
+import { getIncidenciasPendientes } from '../../api/marcaciones';
 
 const navItems = [
   { name: 'Dashboard', icon: LayoutDashboard, path: '/' },
@@ -48,8 +48,9 @@ const Sidebar = () => {
     const fetchIncidencias = async () => {
       try {
         // TODO: Cuando la API soporte filtros, pasar { estado: 'pendiente' }
-        const response = await getIncidencias();
-        setIncidenciasCount(response.total);
+        const response = await getIncidenciasPendientes();
+        const items = Array.isArray(response) ? response : response.items ?? [];
+        setIncidenciasCount(items.length);
       } catch (error) {
         console.error("Error fetching incidencias:", error);
       }

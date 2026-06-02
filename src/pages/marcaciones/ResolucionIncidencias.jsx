@@ -1,6 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { AlertCircle, CheckCircle, XCircle, Search, ChevronDown, Upload, Paperclip, LogIn, LogOut } from 'lucide-react';
 import Header from '../../components/layout/Header';
+import { getIncidenciasPendientes, resolverIncidencia } from '../../api/marcaciones';
 
 // Mock data - Remplazar con llamada a la API
 const mockIncidencias = [
@@ -36,9 +37,12 @@ const ResolucionIncidencias = () => {
   const [selectedIncidencia, setSelectedIncidencia] = useState(null);
   const [resolutionAction, setResolutionAction] = useState('');
   const [file, setFile] = useState(null);
+  const [incidencias, setIncidencias] = useState([]);
+  const [observacion, setObservacion] = useState('');
+  const [resolutionDetails, setResolutionDetails] = useState({ hora: '', tipo: 'ENTRADA' });
 
   const filteredData = useMemo(() => {
-    return mockIncidencias.filter(item => {
+    return incidencias.filter(item => {
       const searchLower = filters.search.toLowerCase();
       return (
         (filters.tipo === 'todos' || item.tipo === filters.tipo) &&
@@ -48,7 +52,22 @@ const ResolucionIncidencias = () => {
     });
   }, [filters]);
 
-  const pendientesCount = mockIncidencias.filter(i => i.estado === 'pendiente').length;
+  const pendientesCount = incidencias.filter(i => i.estado === 'pendiente').length;
+
+  useEffect(() => {
+    fetchIncidencias();
+  }, []);
+
+  const fetchIncidencias = async () => {
+    try {
+      const resp = await getIncidenciasPendientes();
+      // resp may be an array or an object with items
+      const items = Array.isArray(resp) ? resp : resp.items ?? [];
+      setIncidencias(items);
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const openPanel = (incidencia) => {
     setSelectedIncidencia(incidencia);
@@ -65,6 +84,31 @@ const ResolucionIncidencias = () => {
   const handleFileChange = (e) => {
     if (e.target.files[0]) {
       setFile(e.target.files[0]);
+    }
+  };
+
+  const handleConfirmResolution = async () => {
+    if (!selectedIncidencia) return;
+    // Map UI selection to backend payload
+    const payload = {
+      estado_resolucion: resolutionAction === 'ignorar' ? 'ignorada' : 'resuelta',
+      descripcion_resolucion: observacion || `Acción: ${resolutionAction}`,
+      evidencia_url: null,
+      id_resuelto_por: null,
+      detalle_resolucion: {
+        hora: resolutionDetails.hora || null,
+        tipo: resolutionDetails.tipo || null,
+        action: resolutionAction,
+      },
+    };
+
+    try {
+      await resolverIncidencia(selectedIncidencia.id, payload);
+      // refresh list
+      await fetchIncidencias();
+      closePanel();
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -326,6 +370,8 @@ const ResolucionIncidencias = () => {
                 <textarea
                   id="observacion"
                   rows="3"
+                  value={observacion}
+                  onChange={(e) => setObservacion(e.target.value)}
                   className="w-full border-gray-300 rounded-md shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
                   placeholder="Ej: El empleado reportó por correo que el reloj falló..."
                 ></textarea>
@@ -334,7 +380,7 @@ const ResolucionIncidencias = () => {
 
             <div className="p-4 border-t flex justify-end gap-3">
               <button onClick={closePanel} className="px-4 py-2 text-sm font-semibold rounded-md border border-gray-300">Cancelar</button>
-              <button disabled={!resolutionAction} className="px-4 py-2 text-sm font-semibold text-white bg-primary rounded-md disabled:bg-gray-300">Confirmar Resolución</button>
+              <button onClick={handleConfirmResolution} disabled={!resolutionAction} className="px-4 py-2 text-sm font-semibold text-white bg-primary rounded-md disabled:bg-gray-300">Confirmar Resolución</button>
             </div>
           </div>
         </div>

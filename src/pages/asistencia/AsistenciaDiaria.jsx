@@ -15,11 +15,20 @@ import {
   SlidersHorizontal,
   User,
   X,
+  RefreshCw,
+  Edit,
 } from 'lucide-react';
 
 import Header from '../../components/layout/Header';
 import EstadoBadge from '../../components/common/EstadoBadge';
 import { getDepartamentos, getEmpleados, getHorarios } from '../../api/empleados';
+import {
+  getAsistenciaEmpleado,
+  getResumenMensual,
+  recalcularAsistencia,
+  actualizarAsistencia,
+  procesarDia,
+} from '../../api/asistencia';
 
 dayjs.locale('es');
 
@@ -173,14 +182,29 @@ const MOCK_ROWS = buildMockRows();
 
 const normalizeAsistenciaRow = (row) => ({
   ...row,
-  id_empleado: row.id_empleado ?? row.empleadoId ?? row.empleado_id,
+  id_empleado: row.id_empleado ?? row.empleadoId ?? row.empleado_id ?? (row.empleado && row.empleado.id),
   tipo_dia: row.tipo_dia ?? row.tipoDia ?? row.estadoBadge ?? row.estado ?? 'presente',
-  hora_entrada: row.hora_entrada ?? row.horaEntrada ?? '—',
-  hora_salida: row.hora_salida ?? row.horaSalida ?? '—',
-  minutos_retraso: row.minutos_retraso ?? row.minutosRetraso ?? 0,
+  hora_entrada:
+    row.hora_entrada ??
+    row.horaEntrada ??
+    (row.marcacion_entrada_detalle ? dayjs(row.marcacion_entrada_detalle.fecha_hora_marcacion).format('HH:mm') : '—'),
+  hora_salida:
+    row.hora_salida ??
+    row.horaSalida ??
+    (row.marcacion_salida_detalle ? dayjs(row.marcacion_salida_detalle.fecha_hora_marcacion).format('HH:mm') : '—'),
+  minutos_retraso: row.minutos_retraso ?? row.minutosRetraso ?? row.minutos_retraso ?? 0,
+  minutos_trabajados: row.minutos_trabajados ?? row.minutosTrabajados ?? 0,
+  horas_extra: row.horas_extra ?? row.horasExtra ?? 0,
+  trabajo_en_feriado: row.trabajo_en_feriado ?? row.trabajoEnFeriado ?? false,
   origen_dato: row.origen_dato ?? row.origen ?? 'Manual',
-  observacion: row.observacion ?? '—',
-  empleado_nombre: row.empleado_nombre ?? row.empleadoNombre ?? row.nombre ?? 'Empleado',
+  observacion: row.observacion ?? row.observacion ?? '—',
+  empleado_nombre:
+    row.empleado_nombre ??
+    (row.empleado ? `${row.empleado.nombres || ''} ${row.empleado.apellidos || ''}`.trim() : null) ??
+    row.empleadoNombre ??
+    row.nombre ??
+    'Empleado',
+  ci: row.ci ?? row.ci_numero ?? (row.empleado ? row.empleado.ci_numero : undefined) ?? '—',
 });
 
 const FILTER_DEFAULTS = {
@@ -284,6 +308,12 @@ const AsistenciaDiaria = () => {
   const [pageSize, setPageSize] = useState(25);
   const [page, setPage] = useState(1);
   const [selectedRow, setSelectedRow] = useState(null);
+  const [asistencias, setAsistencias] = useState([]);
+  const [loadingAsistencias, setLoadingAsistencias] = useState(false);
+  const [resumenMensual, setResumenMensual] = useState(null);
+  const [editRow, setEditRow] = useState(null);
+  const [procesarModalOpen, setProcesarModalOpen] = useState(false);
+  const [procesarFecha, setProcesarFecha] = useState(dayjs().format('YYYY-MM-DD'));
 
   useEffect(() => {
     let active = true;
@@ -358,10 +388,14 @@ const AsistenciaDiaria = () => {
   }, [empleadoQuery, empleadosCatalogo]);
 
   const filteredRows = useMemo(() => {
-    return MOCK_ROWS.filter((row) => {
+    // Si no hay empleado seleccionado, el backend no provee un endpoint para "toda la empresa".
+    if (!appliedFilters.empleadoId) return [];
+
+    const base = asistencias || [];
+
+    return base.filter((row) => {
       if (appliedFilters.mes && dayjs(row.fecha).format('MM') !== appliedFilters.mes) return false;
       if (appliedFilters.anio && dayjs(row.fecha).format('YYYY') !== appliedFilters.anio) return false;
-      // Filtros solo de frontend: el backend de asistencia todavía no expone `area` ni `turno`.
       if (appliedFilters.area !== 'all' && row.area !== appliedFilters.area) return false;
       if (appliedFilters.turno !== 'all' && row.turno !== appliedFilters.turno) return false;
 
@@ -422,20 +456,105 @@ const AsistenciaDiaria = () => {
     };
   }, [selectedEmployeeMonthRows]);
 
-  const handleApplyFilters = () => {
-    setAppliedFilters({
-      ...draftFilters,
-      empleado: empleadoSeleccionado ? empleadoSeleccionado.nombre : draftFilters.empleado,
-      empleadoId: empleadoSeleccionado ? String(empleadoSeleccionado.id) : draftFilters.empleadoId,
-    });
+  // Cuando se aplica un filtro con empleado seleccionado, traemos las asistencias del backend
+  useEffect(() => {
+    let active = true;
+    const fetch = async () => {
+      if (!appliedFilters.empleadoId) {
+        setAsistencias([]);
+        return;
+      }
+
+      setLoadingAsistencias(true);
+      try {
+        const data = await getAsistenciaEmpleado(appliedFilters.empleadoId);
+        console.log('getAsistenciaEmpleado response', data);
+        if (!active) return;
+        const normalized = (data || []).map(normalizeAsistenciaRow);
+        setAsistencias(normalized);
+      } catch (err) {
+        if (!active) return;
+        setAsistencias([]);
+      } finally {
+        if (active) setLoadingAsistencias(false);
+      }
+    };
+
+    fetch();
+
+    return () => {
+      active = false;
+    };
+  }, [appliedFilters.empleadoId]);
+
+  // Al seleccionar una fila, pedir resumen mensual al backend
+  useEffect(() => {
+    let active = true;
+    const fetchResumen = async () => {
+      if (!selectedRow) {
+        setResumenMensual(null);
+        return;
+      }
+
+      const idEmp = selectedRow.id_empleado;
+      const anio = dayjs(selectedRow.fecha).format('YYYY');
+      const mes = dayjs(selectedRow.fecha).format('MM');
+      try {
+        const res = await getResumenMensual(idEmp, anio, mes);
+        if (!active) return;
+        setResumenMensual(res || null);
+      } catch (err) {
+        if (!active) return;
+        setResumenMensual(null);
+      }
+    };
+
+    fetchResumen();
+
+    return () => {
+      active = false;
+    };
+  }, [selectedRow]);
+
+  const handleSelectSuggestion = (item) => {
+    console.log('Empleado seleccionado', item);
+    setEmpleadoSeleccionado(item);
+    setEmpleadoQuery(item.nombre);
+    const newFilters = { ...draftFilters, empleado: item.nombre, empleadoId: String(item.id) };
+    setDraftFilters(newFilters);
+    // Aplicar automáticamente para cargar asistencias del empleado seleccionado
+    setAppliedFilters(newFilters);
     setSelectedRow(null);
     setPage(1);
   };
 
-  const handleSelectSuggestion = (item) => {
-    setEmpleadoSeleccionado(item);
-    setEmpleadoQuery(item.nombre);
-    setDraftFilters((current) => ({ ...current, empleado: item.nombre, empleadoId: String(item.id) }));
+  const handleApplyFilters = () => {
+    let empleadoId = empleadoSeleccionado ? String(empleadoSeleccionado.id) : draftFilters.empleadoId;
+    let empleadoNombre = empleadoSeleccionado ? empleadoSeleccionado.nombre : draftFilters.empleado;
+
+    if (!empleadoId && empleadoQuery.trim()) {
+      const match = empleadosCatalogo.find((item) =>
+        item.nombre.toLowerCase() === empleadoQuery.trim().toLowerCase() ||
+        String(item.ci).trim() === empleadoQuery.trim()
+      );
+      if (match) {
+        empleadoId = String(match.id);
+        empleadoNombre = match.nombre;
+        setEmpleadoSeleccionado(match);
+      }
+    }
+
+    const newFilters = {
+      ...draftFilters,
+      empleado: empleadoNombre || draftFilters.empleado,
+      empleadoId: empleadoId || '',
+    };
+    console.log('Aplicar filtros', newFilters);
+
+    setDraftFilters(newFilters);
+    setAppliedFilters(newFilters);
+    setSelectedRow(null);
+    setPage(1);
   };
 
   const clearEmployeeFilter = () => {
@@ -493,13 +612,24 @@ const AsistenciaDiaria = () => {
             <p className="text-sm text-slate-500">Registro detallado · 120 registros · Abril 2026</p>
           </div>
 
-          <button
-            type="button"
-            className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-[13px] font-semibold text-[#03178C] shadow-sm transition hover:border-[#03178C] hover:bg-[#EBF4FF]"
-          >
-            <SlidersHorizontal className="h-4 w-4" />
-            Tolerancia: 10 min
-          </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-[13px] font-semibold text-[#03178C] shadow-sm transition hover:border-[#03178C] hover:bg-[#EBF4FF]"
+              >
+                <SlidersHorizontal className="h-4 w-4" />
+                Tolerancia: 10 min
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setProcesarModalOpen(true)}
+                className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-[13px] font-semibold text-[#03178C] shadow-sm transition hover:border-[#03178C] hover:bg-[#EBF4FF]"
+              >
+                <CalendarDays className="h-4 w-4" />
+                Procesar Día
+              </button>
+            </div>
         </div>
 
         <section className="mb-4 rounded-xl bg-white p-4 shadow-sm">
@@ -546,6 +676,8 @@ const AsistenciaDiaria = () => {
                 <span className="text-[11px] font-medium uppercase tracking-wide text-slate-500">Empleado</span>
                 <div className="relative">
                   <input
+                    id="empleado"
+                    name="empleado"
                     value={empleadoQuery}
                     onChange={(event) => {
                       setEmpleadoQuery(event.target.value);
@@ -651,7 +783,7 @@ const AsistenciaDiaria = () => {
             <table className="min-w-[1120px] w-full border-separate border-spacing-0 text-left">
               <thead className="sticky top-0 z-10 bg-slate-50">
                 <tr>
-                  {['Empleado', 'CI', 'Fecha', 'Hora entrada', 'Hora salida', 'Min. retraso', 'Tipo día', 'Origen dato', 'Obs.'].map((column) => (
+                      {['Empleado', 'CI', 'Fecha', 'Hora entrada', 'Hora salida', 'Min. retraso', 'Tipo día', 'Origen dato', 'Obs.', 'Acciones'].map((column) => (
                     <th
                       key={column}
                       className="border-b border-slate-200 px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-slate-500"
@@ -663,10 +795,19 @@ const AsistenciaDiaria = () => {
               </thead>
 
               <tbody>
-                {paginatedRows.length === 0 ? (
+                {appliedFilters.empleadoId === '' ? (
                   <tr>
-                    <td colSpan={9} className="px-4 py-12 text-center text-sm text-slate-500">
-                      {loadingCatalogs ? 'Cargando catálogos...' : 'No hay registros para los filtros seleccionados.'}
+                    <td colSpan={10} className="px-4 py-24 text-center text-sm text-slate-500">
+                      <div className="flex flex-col items-center justify-center gap-3">
+                        <User className="h-12 w-12 text-slate-300" />
+                        <div className="text-sm text-slate-500">Selecciona un empleado para ver su asistencia</div>
+                      </div>
+                    </td>
+                  </tr>
+                ) : paginatedRows.length === 0 ? (
+                  <tr>
+                    <td colSpan={10} className="px-4 py-12 text-center text-sm text-slate-500">
+                      {loadingAsistencias ? 'Cargando asistencias...' : 'No hay registros para los filtros seleccionados.'}
                     </td>
                   </tr>
                 ) : (
@@ -707,6 +848,40 @@ const AsistenciaDiaria = () => {
                           <OriginBadge origin={row.origen_dato} />
                         </td>
                         <td className="px-4 py-3 text-sm italic text-slate-500">{row.observacion || '—'}</td>
+                        <td className="px-4 py-3 text-sm">
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              title="Recalcular este día"
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                try {
+                                  await recalcularAsistencia(row.id_empleado, { fecha: row.fecha });
+                                  // refetch
+                                  const data = await getAsistenciaEmpleado(appliedFilters.empleadoId);
+                                  setAsistencias((data || []).map(normalizeAsistenciaRow));
+                                } catch (err) {
+                                  // ignore for now
+                                }
+                              }}
+                              className="rounded-md bg-[#EBF4FF] p-2 text-[#03178C] transition hover:brightness-95"
+                            >
+                              <RefreshCw className="h-4 w-4" />
+                            </button>
+
+                            <button
+                              type="button"
+                              title="Editar registro"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setEditRow(row);
+                              }}
+                              className="rounded-md bg-white p-2 text-slate-600 transition hover:bg-slate-50"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </td>
                       </tr>
                     );
                   })
@@ -748,6 +923,104 @@ const AsistenciaDiaria = () => {
           </div>
         </section>
       </div>
+
+      {/* Modales: Editar registro y Procesar Día */}
+      {editRow && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-lg">
+            <h3 className="text-lg font-bold text-slate-900">Editar asistencia</h3>
+            <p className="mt-1 text-sm text-slate-500">Editar campos permitidos para el registro</p>
+
+            <div className="mt-4 grid gap-3">
+              <label className="flex flex-col" htmlFor="edit-hora-entrada">
+                <span className="text-xs text-slate-500">Hora entrada</span>
+                <input id="edit-hora-entrada" name="hora_entrada" className="mt-1 rounded-lg border px-3 py-2" value={editRow.hora_entrada || ''} onChange={(e) => setEditRow((r) => ({ ...r, hora_entrada: e.target.value }))} />
+              </label>
+              <label className="flex flex-col" htmlFor="edit-hora-salida">
+                <span className="text-xs text-slate-500">Hora salida</span>
+                <input id="edit-hora-salida" name="hora_salida" className="mt-1 rounded-lg border px-3 py-2" value={editRow.hora_salida || ''} onChange={(e) => setEditRow((r) => ({ ...r, hora_salida: e.target.value }))} />
+              </label>
+              <label className="flex flex-col" htmlFor="edit-minutos-retraso">
+                <span className="text-xs text-slate-500">Minutos retraso</span>
+                <input id="edit-minutos-retraso" name="minutos_retraso" type="number" className="mt-1 rounded-lg border px-3 py-2" value={editRow.minutos_retraso ?? ''} onChange={(e) => setEditRow((r) => ({ ...r, minutos_retraso: e.target.value !== '' ? Number(e.target.value) : null }))} />
+              </label>
+              <label className="flex flex-col" htmlFor="edit-observacion">
+                <span className="text-xs text-slate-500">Observación</span>
+                <input id="edit-observacion" name="observacion" className="mt-1 rounded-lg border px-3 py-2" value={editRow.observacion || ''} onChange={(e) => setEditRow((r) => ({ ...r, observacion: e.target.value }))} />
+              </label>
+            </div>
+
+            <div className="mt-4 flex justify-end gap-2">
+              <button type="button" onClick={() => setEditRow(null)} className="rounded-lg border border-slate-200 px-4 py-2">Cancelar</button>
+              <button
+                type="button"
+                onClick={async () => {
+                  try {
+                    await actualizarAsistencia(editRow.id, {
+                      hora_entrada: editRow.hora_entrada,
+                      hora_salida: editRow.hora_salida,
+                      minutos_retraso: editRow.minutos_retraso,
+                      observacion: editRow.observacion,
+                    });
+                    // refetch
+                    if (appliedFilters.empleadoId) {
+                      const data = await getAsistenciaEmpleado(appliedFilters.empleadoId);
+                      setAsistencias((data || []).map(normalizeAsistenciaRow));
+                    }
+                  } catch (err) {
+                    // ignore
+                  } finally {
+                    setEditRow(null);
+                  }
+                }}
+                className="rounded-lg bg-[#03178C] px-4 py-2 text-white"
+              >
+                Guardar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {procesarModalOpen && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40">
+          <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-lg">
+            <h3 className="text-lg font-bold text-slate-900">Procesar día</h3>
+            <p className="mt-1 text-sm text-slate-500">Selecciona la fecha a procesar (requiere empleado seleccionado)</p>
+
+            <div className="mt-4">
+              <input id="procesar-fecha" name="procesar_fecha" type="date" value={procesarFecha} onChange={(e) => setProcesarFecha(e.target.value)} className="w-full rounded-lg border px-3 py-2" />
+            </div>
+
+            <div className="mt-4 flex justify-end gap-2">
+              <button type="button" onClick={() => setProcesarModalOpen(false)} className="rounded-lg border border-slate-200 px-4 py-2">Cancelar</button>
+              <button
+                type="button"
+                onClick={async () => {
+                  if (!appliedFilters.empleadoId) {
+                    // require empleado
+                    setProcesarModalOpen(false);
+                    return;
+                  }
+                  try {
+                    await procesarDia({ fecha: procesarFecha, id_empleado: appliedFilters.empleadoId });
+                    // refetch
+                    const data = await getAsistenciaEmpleado(appliedFilters.empleadoId);
+                    setAsistencias((data || []).map(normalizeAsistenciaRow));
+                  } catch (err) {
+                    // ignore
+                  } finally {
+                    setProcesarModalOpen(false);
+                  }
+                }}
+                className="rounded-lg bg-[#03178C] px-4 py-2 text-white"
+              >
+                Procesar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <aside
         className={`fixed right-0 top-0 z-40 h-screen w-full max-w-[380px] transform border-l border-slate-200 bg-white shadow-2xl transition-transform duration-300 ${selectedRow ? 'translate-x-0' : 'translate-x-full'}`}
@@ -814,10 +1087,26 @@ const AsistenciaDiaria = () => {
               </div>
 
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                <MetricBox label="Presencias" value={summary.presencias} />
-                <MetricBox label="Faltas" value={summary.faltas} />
-                <MetricBox label="Retrasos" value={summary.retrasos} />
-                <MetricBox label="Vacaciones tomadas" value={summary.vacaciones} />
+                {resumenMensual ? (
+                  <>
+                    <MetricBox label="Minutos trabajados" value={resumenMensual.minutos_trabajados ?? resumenMensual.minutosTrabajados ?? '—'} />
+                    <MetricBox label="Horas extra" value={resumenMensual.horas_extra ?? resumenMensual.horasExtra ?? '—'} />
+                    <MetricBox label="Presencias" value={resumenMensual.presencias ?? resumenMensual.presences ?? summary.presencias} />
+                    <MetricBox label="Faltas" value={resumenMensual.faltas ?? resumenMensual.absences ?? summary.faltas} />
+                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                      <span className="text-[11px] uppercase tracking-wider text-slate-400">Trabajo en feriado</span>
+                      <p className="mt-1 text-sm font-semibold text-slate-900">{resumenMensual.trabajo_en_feriado ? 'Sí' : 'No'}</p>
+                    </div>
+                    <MetricBox label="Retrasos" value={resumenMensual.retrasos ?? summary.retrasos} />
+                  </>
+                ) : (
+                  <>
+                    <MetricBox label="Presencias" value={summary.presencias} />
+                    <MetricBox label="Faltas" value={summary.faltas} />
+                    <MetricBox label="Retrasos" value={summary.retrasos} />
+                    <MetricBox label="Vacaciones tomadas" value={summary.vacaciones} />
+                  </>
+                )}
               </div>
             </div>
 

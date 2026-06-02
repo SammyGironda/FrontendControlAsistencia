@@ -25,6 +25,7 @@ function App() {
           <Route path="/empleados" element={<EmpleadosListado />} />
           <Route path="/empleados/nuevo" element={<EmpleadoForm />} />
           <Route path="/empleados/:id" element={<EmpleadoForm />} />
+          <Route path="/empleados/editar/:id" element={<EmpleadoForm />} />
           <Route path="/contratos" element={<Contratos />} />
           <Route path="/ingesta" element={<IngestaExcel />} />
           <Route path="/marcaciones/incidencias" element={<ResolucionIncidencias />} />

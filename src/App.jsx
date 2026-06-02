@@ -11,6 +11,7 @@ import AsistenciaDiaria from './pages/asistencia/AsistenciaDiaria';
 import Reportes from './pages/reportes/Reportes';
 import Configuracion from './pages/configuracion/Configuracion';
 import Roles from './pages/configuracion/Roles';
+import Feriados from './pages/configuracion/Feriados';
 import Contratos from './pages/contratos/Contratos';
 
 function App() {
@@ -31,6 +32,7 @@ function App() {
           <Route path="/reportes" element={<Reportes />} />
           <Route path="/configuracion" element={<Configuracion />} />
           <Route path="/configuracion/roles" element={<Roles />} />
+          <Route path="/configuracion/feriados" element={<Feriados />} />
           {/* Add more private routes here */}
         </Route>
       </Route>

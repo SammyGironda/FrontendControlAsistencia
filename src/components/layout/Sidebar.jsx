@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import {
   LayoutDashboard, Users, Upload, CalendarCheck,
-  FileText, Settings, ClipboardList, LogOut, AlertCircle, FileSignature
+  FileText, Settings, ClipboardList, LogOut, AlertCircle, FileSignature,
+  SlidersHorizontal, Shield, CalendarX, ChevronDown
 } from 'lucide-react';
 import useAuthStore from '../../store/authStore';
 import { getIncidencias } from '../../api/marcaciones';
@@ -11,25 +12,39 @@ const navItems = [
   { name: 'Dashboard', icon: LayoutDashboard, path: '/' },
   { name: 'Empleados', icon: Users, path: '/empleados' },
   { name: 'Contratos', icon: FileSignature, path: '/contratos' },
-  { 
-    name: 'Ingesta de Marcaciones', 
-    icon: Upload, 
+  {
+    name: 'Ingesta de Marcaciones',
+    icon: Upload,
     path: '/ingesta',
     subItems: [
-      { name: 'Resolución de Incidencias', icon: AlertCircle, path: '/marcaciones/incidencias' }
-    ] 
+      { name: 'Resolución de Incidencias', icon: AlertCircle, path: '/marcaciones/incidencias', badge: 'incidencias' }
+    ]
   },
   { name: 'Asistencia y Cálculos', icon: CalendarCheck, path: '/asistencia' },
   { name: 'Reportes', icon: FileText, path: '/reportes' },
-  { name: 'Configuración', icon: Settings, path: '/configuracion' },
+  {
+    name: 'Configuración',
+    icon: Settings,
+    path: '/configuracion',
+    subItems: [
+      { name: 'Reglas y Turnos', icon: SlidersHorizontal, path: '/configuracion' },
+      { name: 'Roles del Sistema', icon: Shield, path: '/configuracion/roles' },
+      { name: 'Feriados', icon: CalendarX, path: '/configuracion/feriados' }
+    ]
+  },
 ];
 
 const Sidebar = () => {
   const { user } = useAuthStore();
   const location = useLocation();
   const [incidenciasCount, setIncidenciasCount] = useState(0);
+  const [configExpanded, setConfigExpanded] = useState(() => location.pathname.startsWith('/configuracion'));
 
   useEffect(() => {
+    if (location.pathname.startsWith('/configuracion')) {
+      setConfigExpanded(true);
+    }
+
     const fetchIncidencias = async () => {
       try {
         // TODO: Cuando la API soporte filtros, pasar { estado: 'pendiente' }
@@ -44,7 +59,7 @@ const Sidebar = () => {
     const interval = setInterval(fetchIncidencias, 60000); // Actualizar cada minuto
 
     return () => clearInterval(interval);
-  }, []);
+  }, [location.pathname]);
 
 
   const getInitials = (name) => {
@@ -84,10 +99,13 @@ const Sidebar = () => {
         <ul className="space-y-1 px-3">
           {navItems.map((item) => {
             const isActive = isItemActive(item.path);
+            const hasSubItems = item.subItems && item.subItems.length > 0;
+            const isConfigItem = item.path === '/configuracion' && hasSubItems;
             return (
               <li key={item.name}>
                 <Link
                   to={item.path}
+                  onClick={isConfigItem ? () => setConfigExpanded((prev) => !prev) : undefined}
                   className={`flex items-center gap-3 px-4 py-2.5 rounded-lg cursor-pointer transition-colors relative ${
                     isActive
                       ? 'bg-white/10'
@@ -108,12 +126,23 @@ const Sidebar = () => {
                   >
                     {item.name}
                   </span>
+                  {isConfigItem && (
+                    <ChevronDown
+                      className={`w-4 h-4 ml-auto transition-transform duration-200 ${
+                        configExpanded ? 'rotate-180 text-white' : 'text-white/50'
+                      }`}
+                    />
+                  )}
                   {isActive && !item.subItems && (
                     <div className="absolute right-4 w-1.5 h-1.5 rounded-full bg-[#D9A404]" />
                   )}
                 </Link>
                 {item.subItems && (
-                  <ul className="pl-3 pt-1">
+                  <ul className={`pl-3 pt-1 overflow-hidden transition-all duration-200 ${
+                    (isConfigItem ? configExpanded : true)
+                      ? 'max-h-48 opacity-100'
+                      : 'max-h-0 opacity-0'
+                  }`}>
                     {item.subItems.map(subItem => {
                       const isSubActive = location.pathname.startsWith(subItem.path);
                       return (
@@ -125,15 +154,15 @@ const Sidebar = () => {
                                 ? 'bg-white/10'
                                 : 'hover:bg-white/8'
                             }`}
-                            style={{ paddingLeft: '28px' }} // 12px de indentación extra
+                            style={{ paddingLeft: '28px' }}
                           >
                             <subItem.icon
-                              className={`w-4 h-4 flex-shrink-0 ${ // 16px
+                              className={`w-4 h-4 flex-shrink-0 ${
                                 isSubActive ? 'text-white' : 'text-white/50'
                               }`}
                             />
                             <span
-                              className={`text-[13px] ${ // 13px
+                              className={`text-[13px] ${
                                 isSubActive
                                   ? 'text-white font-semibold'
                                   : 'text-white/70'
@@ -141,7 +170,7 @@ const Sidebar = () => {
                             >
                               {subItem.name}
                             </span>
-                            {incidenciasCount > 0 && (
+                            {subItem.badge === 'incidencias' && incidenciasCount > 0 && (
                               <span className="ml-auto w-4 h-4 flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full">
                                 {incidenciasCount}
                               </span>

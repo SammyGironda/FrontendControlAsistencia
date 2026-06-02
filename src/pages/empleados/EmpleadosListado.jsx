@@ -5,10 +5,11 @@ import DataTable from '../../components/common/DataTable';
 import EstadoBadge from '../../components/common/EstadoBadge';
 import { format, formatDistanceToNow } from 'date-fns';
 import { es } from "date-fns/locale/es";
-import { Eye, Edit, Trash2, Plus, Search, ChevronDown } from 'lucide-react';
+import { Eye, Clock, Edit, Trash2, Plus, Search, ChevronDown } from 'lucide-react';
 import { darBajaEmpleado } from '../../api/empleados';
 import { toast } from 'react-hot-toast';
 import { Tooltip } from 'react-tooltip';
+import AsignarHorarioDrawer from './AsignarHorarioDrawer';
 
 const getInitials = (name = '') => {
     if (!name) return '';
@@ -32,6 +33,9 @@ const EmpleadosListado = () => {
     search,
     ...filters,
   });
+
+  const [empleadoParaAsignar, setEmpleadoParaAsignar] = useState(null);
+  const [isAsignarDrawerOpen, setIsAsignarDrawerOpen] = useState(false);
 
   const empleados = Array.isArray(data) ? data : [];
 
@@ -124,6 +128,23 @@ const EmpleadosListado = () => {
         Header: 'ACCIONES',
         Cell: ({ row }) => (
           <div className="flex items-center space-x-3">
+            <button
+              onClick={() => {
+                setEmpleadoParaAsignar({
+                  id: row.original.id,
+                  nombre: row.original.nombres,
+                  apellidos: row.original.apellidos,
+                  cargo: row.original.id_cargo,
+                  departamento: row.original.id_departamento,
+                });
+                setIsAsignarDrawerOpen(true);
+              }}
+              className="text-primary hover:text-blue-700"
+              data-tooltip-id="actions-tooltip"
+              data-tooltip-content="Asignar horario"
+            >
+              <Clock className="w-4 h-4" />
+            </button>
             <button
                 onClick={() => navigate(`/empleados/editar/${row.original.id}`)}
                 className="text-gray-400 hover:text-blue-600"
@@ -243,6 +264,12 @@ const EmpleadosListado = () => {
         onPageChange={handlePageChange}
       />
       <Tooltip id="actions-tooltip" />
+      <AsignarHorarioDrawer
+        empleado={empleadoParaAsignar}
+        isOpen={isAsignarDrawerOpen}
+        onClose={() => setIsAsignarDrawerOpen(false)}
+        onAsignacionExitosa={refetch}
+      />
     </div>
   );
 };

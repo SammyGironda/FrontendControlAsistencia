@@ -2,11 +2,16 @@ import client from './client';
 
 // Asistencias de un empleado
 export const getAsistenciaEmpleado = async (idEmpleado, params) => {
-  const response = await client.get(
-    `/api/v1/asistencia/empleado/${idEmpleado}`,
-    { params }
-  );
-  return response.data;
+  try {
+    const response = await client.get(
+      `/api/v1/asistencia/empleado/${idEmpleado}`,
+      { params }
+    );
+    return response.data;
+  } catch (error) {
+    console.error('getAsistenciaEmpleado error', error);
+    throw error;
+  }
 };
 
 // Detalle de un registro
@@ -59,6 +64,11 @@ export const recalcularAsistencia = async (idEmpleado, data) => {
 };
 
 export const getResumenMensual = async (idEmpleado, anio, mes) => {
-  const response = await client.get(`/api/v1/asistencia/resumen-mensual/${idEmpleado}/${anio}/${mes}`);
-  return response.data;
+  try {
+    const response = await client.get(`/api/v1/asistencia/resumen-mensual/${idEmpleado}/${anio}/${mes}`);
+    return response.data;
+  } catch (error) {
+    console.error('getResumenMensual error', error);
+    throw error;
+  }
 };

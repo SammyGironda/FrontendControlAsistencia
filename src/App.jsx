@@ -7,7 +7,7 @@ import EmpleadosListado from './pages/empleados/EmpleadosListado';
 import EmpleadoForm from './pages/empleados/EmpleadoForm';
 import IngestaExcel from './pages/marcaciones/IngestaExcel';
 import ResolucionIncidencias from './pages/marcaciones/ResolucionIncidencias';
-import AsistenciaDiaria from './pages/asistencia/AsistenciaDiaria';
+import AsistenciaPage from './pages/asistencia/AsistenciaPage';
 import Reportes from './pages/reportes/Reportes';
 import Configuracion from './pages/configuracion/Configuracion';
 import Roles from './pages/configuracion/Roles';
@@ -29,7 +29,7 @@ function App() {
           <Route path="/contratos" element={<Contratos />} />
           <Route path="/ingesta" element={<IngestaExcel />} />
           <Route path="/marcaciones/incidencias" element={<ResolucionIncidencias />} />
-          <Route path="/asistencia" element={<AsistenciaDiaria />} />
+          <Route path="/asistencia" element={<AsistenciaPage />} />
           <Route path="/reportes" element={<Reportes />} />
           <Route path="/configuracion" element={<Configuracion />} />
           <Route path="/configuracion/roles" element={<Roles />} />

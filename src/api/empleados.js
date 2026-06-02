@@ -3,38 +3,48 @@ import client from './client';
 const API_PREFIX = '/api/v1';
 
 export const getEmpleados = async (params = {}) => {
-  const { page, skip, limit, estado, id_departamento, id_cargo, area, search } = params;
+  try {
+    const { page, skip, limit, estado, id_departamento, id_cargo, area, search } = params;
 
-  const queryParams = {
-    skip: typeof skip === 'number' ? skip : Math.max((Number(page) || 1) - 1, 0) * (Number(limit) || 10),
-    limit: Number(limit) || 10,
-  };
+    const queryParams = {
+      skip: typeof skip === 'number' ? skip : Math.max((Number(page) || 1) - 1, 0) * (Number(limit) || 10),
+      limit: Number(limit) || 10,
+    };
 
-  if (estado) {
-    queryParams.estado = estado;
+    if (estado) {
+      queryParams.estado = estado;
+    }
+
+    if (id_departamento) {
+      queryParams.id_departamento = Number(id_departamento);
+    } else if (area) {
+      queryParams.id_departamento = Number(area);
+    }
+
+    if (id_cargo) {
+      queryParams.id_cargo = Number(id_cargo);
+    }
+
+    if (search) {
+      // TODO: el backend no expone búsqueda por nombre/CI en este listado.
+    }
+
+    const response = await client.get(`${API_PREFIX}/empleados/`, { params: queryParams });
+    return response.data;
+  } catch (error) {
+    console.error('getEmpleados error', error);
+    throw error;
   }
-
-  if (id_departamento) {
-    queryParams.id_departamento = Number(id_departamento);
-  } else if (area) {
-    queryParams.id_departamento = Number(area);
-  }
-
-  if (id_cargo) {
-    queryParams.id_cargo = Number(id_cargo);
-  }
-
-  if (search) {
-    // TODO: el backend no expone búsqueda por nombre/CI en este listado.
-  }
-
-  const response = await client.get(`${API_PREFIX}/empleados/`, { params: queryParams });
-  return response.data;
 };
 
 export const getEmpleado = async (id) => {
-  const response = await client.get(`${API_PREFIX}/empleados/${id}`);
-  return response.data;
+  try {
+    const response = await client.get(`${API_PREFIX}/empleados/${id}`);
+    return response.data;
+  } catch (error) {
+    console.error('getEmpleado error', error);
+    throw error;
+  }
 };
 
 export const crearEmpleado = async (data) => {

@@ -182,6 +182,7 @@ const MOCK_ROWS = buildMockRows();
 
 const normalizeAsistenciaRow = (row) => ({
   ...row,
+  id: row.id ?? row.asistencia_id ?? row.asistenciaId,
   id_empleado: row.id_empleado ?? row.empleadoId ?? row.empleado_id ?? (row.empleado && row.empleado.id),
   tipo_dia: row.tipo_dia ?? row.tipoDia ?? row.estadoBadge ?? row.estado ?? 'presente',
   hora_entrada:
@@ -192,7 +193,7 @@ const normalizeAsistenciaRow = (row) => ({
     row.hora_salida ??
     row.horaSalida ??
     (row.marcacion_salida_detalle ? dayjs(row.marcacion_salida_detalle.fecha_hora_marcacion).format('HH:mm') : '—'),
-  minutos_retraso: row.minutos_retraso ?? row.minutosRetraso ?? row.minutos_retraso ?? 0,
+  minutos_retraso: row.minutos_retraso ?? row.minutosRetraso ?? 0,
   minutos_trabajados: row.minutos_trabajados ?? row.minutosTrabajados ?? 0,
   horas_extra: row.horas_extra ?? row.horasExtra ?? 0,
   trabajo_en_feriado: row.trabajo_en_feriado ?? row.trabajoEnFeriado ?? false,
@@ -354,6 +355,8 @@ const AsistenciaDiaria = () => {
               id: item.id,
               nombre: `${item.nombres || ''} ${item.apellidos || ''}`.trim() || item.nombre || `Empleado ${item.id}`,
               ci: item.ci_numero || item.ci || '',
+              area: item.departamento || item.area || '',
+              turno: item.turno || item.horario || '',
             }))
           );
         } else {
@@ -362,6 +365,8 @@ const AsistenciaDiaria = () => {
               id: item.id,
               nombre: item.nombre,
               ci: item.ci,
+              area: item.area,
+              turno: item.turno,
             }))
           );
         }
@@ -385,6 +390,16 @@ const AsistenciaDiaria = () => {
     return empleadosCatalogo
       .filter((item) => item.nombre.toLowerCase().includes(query) || String(item.ci || '').includes(query))
       .slice(0, 6);
+  }, [empleadoQuery, empleadosCatalogo]);
+
+  const empleadosVisibles = useMemo(() => {
+    const query = empleadoQuery.trim().toLowerCase();
+    return empleadosCatalogo
+      .filter((item) => {
+        if (!query) return true;
+        return item.nombre.toLowerCase().includes(query) || String(item.ci || '').includes(query);
+      })
+      .slice(0, 12);
   }, [empleadoQuery, empleadosCatalogo]);
 
   const filteredRows = useMemo(() => {
@@ -797,10 +812,49 @@ const AsistenciaDiaria = () => {
               <tbody>
                 {appliedFilters.empleadoId === '' ? (
                   <tr>
-                    <td colSpan={10} className="px-4 py-24 text-center text-sm text-slate-500">
-                      <div className="flex flex-col items-center justify-center gap-3">
-                        <User className="h-12 w-12 text-slate-300" />
-                        <div className="text-sm text-slate-500">Selecciona un empleado para ver su asistencia</div>
+                    <td colSpan={10} className="px-4 py-8 text-center text-sm text-slate-500">
+                      <div className="mx-auto max-w-4xl space-y-6">
+                        <div className="flex flex-col items-center justify-center gap-3">
+                          <User className="h-12 w-12 text-slate-300" />
+                          <div className="text-sm font-semibold text-slate-900">Selecciona un empleado para ver su asistencia</div>
+                          <div className="text-sm text-slate-500">Haz clic en un empleado de la lista para cargar sus registros diarios.</div>
+                        </div>
+
+                        <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4 shadow-sm">
+                          <div className="mb-4 flex items-center justify-between gap-3">
+                            <div>
+                              <h3 className="text-sm font-semibold text-slate-900">Empleados disponibles</h3>
+                              <p className="text-sm text-slate-500">Selecciona un empleado para cargar la asistencia diaria.</p>
+                            </div>
+                          </div>
+
+                          {empleadosVisibles.length === 0 ? (
+                            <p className="text-sm text-slate-500">Cargando empleados...</p>
+                          ) : (
+                            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                              {empleadosVisibles.map((empleado) => (
+                                <button
+                                  key={empleado.id}
+                                  type="button"
+                                  onClick={() => handleSelectSuggestion(empleado)}
+                                  className="flex w-full flex-col items-start justify-between rounded-2xl border border-slate-200 bg-white p-4 text-left transition hover:border-[#03178C] hover:bg-[#F8FAFF]"
+                                >
+                                  <div>
+                                    <p className="text-sm font-semibold text-slate-900">{empleado.nombre}</p>
+                                    <p className="mt-1 text-xs text-slate-500">CI {empleado.ci || '—'}</p>
+                                    {empleado.area && (
+                                      <p className="mt-2 text-xs text-slate-500">Área: {empleado.area}</p>
+                                    )}
+                                    {empleado.turno && (
+                                      <p className="mt-1 text-xs text-slate-500">Turno: {empleado.turno}</p>
+                                    )}
+                                  </div>
+                                  <span className="mt-4 rounded-full bg-[#EBF4FF] px-3 py-1 text-[11px] font-semibold text-[#03178C]">Ver asistencia</span>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </td>
                   </tr>
@@ -821,9 +875,16 @@ const AsistenciaDiaria = () => {
                         className={`group cursor-pointer border-b border-slate-100 transition hover:shadow-[inset_0_0_0_1px_rgba(3,23,140,0.1)] ${getRowTone(row)}`}
                       >
                         <td className="px-4 py-3 text-sm font-medium text-slate-900">
-                          <div className="flex items-center gap-2">
-                            <span>{row.empleado_nombre}</span>
-                            {row.incidencia_pendiente && <AlertCircle className="h-4 w-4 text-[#D97706]" />}
+                          <div className="flex flex-col gap-1">
+                            <div className="flex items-center gap-2">
+                              <span>{row.empleado_nombre}</span>
+                              {row.incidencia_pendiente && <AlertCircle className="h-4 w-4 text-[#D97706]" />}
+                            </div>
+                            {row.trabajo_en_feriado && (
+                              <span className="inline-flex items-center rounded-full bg-[#E8F7FF] px-2 py-0.5 text-[11px] font-medium text-[#0369A1]">
+                                Trabajo en feriado
+                              </span>
+                            )}
                           </div>
                         </td>
                         <td className="px-4 py-3 text-sm text-slate-500">{row.ci}</td>
@@ -1089,15 +1150,16 @@ const AsistenciaDiaria = () => {
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
                 {resumenMensual ? (
                   <>
-                    <MetricBox label="Minutos trabajados" value={resumenMensual.minutos_trabajados ?? resumenMensual.minutosTrabajados ?? '—'} />
-                    <MetricBox label="Horas extra" value={resumenMensual.horas_extra ?? resumenMensual.horasExtra ?? '—'} />
-                    <MetricBox label="Presencias" value={resumenMensual.presencias ?? resumenMensual.presences ?? summary.presencias} />
-                    <MetricBox label="Faltas" value={resumenMensual.faltas ?? resumenMensual.absences ?? summary.faltas} />
-                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                      <span className="text-[11px] uppercase tracking-wider text-slate-400">Trabajo en feriado</span>
-                      <p className="mt-1 text-sm font-semibold text-slate-900">{resumenMensual.trabajo_en_feriado ? 'Sí' : 'No'}</p>
-                    </div>
-                    <MetricBox label="Retrasos" value={resumenMensual.retrasos ?? summary.retrasos} />
+                    <MetricBox label="Minutos trabajados" value={resumenMensual.total_minutos_trabajados ?? resumenMensual.totalMinutosTrabajados ?? '—'} />
+                    <MetricBox label="Horas extra" value={resumenMensual.total_horas_extra ?? resumenMensual.totalHorasExtra ?? '—'} />
+                    <MetricBox label="Minutos de retraso" value={resumenMensual.total_minutos_retraso ?? resumenMensual.totalMinutosRetraso ?? '—'} />
+                    <MetricBox label="Días trabajados en feriado" value={resumenMensual.dias_trabajados_en_feriado ?? resumenMensual.diasTrabajadosEnFeriado ?? '—'} />
+                    <MetricBox label="Días presente" value={resumenMensual.dias_presente ?? resumenMensual.diasPresente ?? '—'} />
+                    <MetricBox label="Días ausente" value={resumenMensual.dias_ausente ?? resumenMensual.diasAusente ?? '—'} />
+                    <MetricBox label="Días feriado" value={resumenMensual.dias_feriado ?? resumenMensual.diasFeriado ?? '—'} />
+                    <MetricBox label="Días permiso parcial" value={resumenMensual.dias_permiso_parcial ?? resumenMensual.diasPermisoParcial ?? '—'} />
+                    <MetricBox label="Días licencia médica" value={resumenMensual.dias_licencia_medica ?? resumenMensual.diasLicenciaMedica ?? '—'} />
+                    <MetricBox label="Días descanso" value={resumenMensual.dias_descanso ?? resumenMensual.diasDescanso ?? '—'} />
                   </>
                 ) : (
                   <>
@@ -1126,6 +1188,7 @@ const AsistenciaDiaria = () => {
     </div>
   );
 };
+
 
 const MetricBox = ({ label, value }) => (
   <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">

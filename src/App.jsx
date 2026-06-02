@@ -8,7 +8,7 @@ import EmpleadoForm from './pages/empleados/EmpleadoForm';
 import IngestaExcel from './pages/marcaciones/IngestaExcel';
 import ResolucionIncidencias from './pages/marcaciones/ResolucionIncidencias';
 import AsistenciaPage from './pages/asistencia/AsistenciaPage';
-import Reportes from './pages/reportes/Reportes';
+import ReportesPage from './pages/reportes/ReportesPage';
 import Configuracion from './pages/configuracion/Configuracion';
 import Roles from './pages/configuracion/Roles';
 import Feriados from './pages/configuracion/Feriados';
@@ -30,7 +30,7 @@ function App() {
           <Route path="/ingesta" element={<IngestaExcel />} />
           <Route path="/marcaciones/incidencias" element={<ResolucionIncidencias />} />
           <Route path="/asistencia" element={<AsistenciaPage />} />
-          <Route path="/reportes" element={<Reportes />} />
+          <Route path="/reportes" element={<ReportesPage />} />
           <Route path="/configuracion" element={<Configuracion />} />
           <Route path="/configuracion/roles" element={<Roles />} />
           <Route path="/configuracion/feriados" element={<Feriados />} />

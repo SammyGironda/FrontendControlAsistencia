@@ -222,7 +222,14 @@ const Dashboard = () => {
     return { label: `${percent}%`, color: 'bg-green-100 text-success', sign: '▼' };
   }, [currentMonthItem, previousMonthItem]);
 
-  const incidenciasItems = incidenciasData?.items ?? [];
+  const incidenciasItems =
+    Array.isArray(incidenciasData)
+      ? incidenciasData
+      : Array.isArray(incidenciasData?.items)
+      ? incidenciasData.items
+      : Array.isArray(incidenciasData?.value)
+      ? incidenciasData.value
+      : [];
   const incidenciaCounts = useMemo(() => {
     if (!Array.isArray(incidenciasItems)) {
       return { huerfana: 0, duplicada: 0, inconsistente: 0 };

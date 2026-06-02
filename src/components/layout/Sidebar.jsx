@@ -49,7 +49,13 @@ const Sidebar = () => {
       try {
         // TODO: Cuando la API soporte filtros, pasar { estado: 'pendiente' }
         const response = await getIncidenciasPendientes();
-        const items = Array.isArray(response) ? response : response.items ?? [];
+        const items = Array.isArray(response)
+          ? response
+          : Array.isArray(response.items)
+          ? response.items
+          : Array.isArray(response.value)
+          ? response.value
+          : [];
         setIncidenciasCount(items.length);
       } catch (error) {
         console.error("Error fetching incidencias:", error);

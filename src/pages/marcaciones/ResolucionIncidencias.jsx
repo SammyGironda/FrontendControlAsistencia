@@ -32,7 +32,7 @@ const getRowBgColor = (tipo) => {
 }
 
 const ResolucionIncidencias = () => {
-  const [filters, setFilters] = useState({ tipo: 'todos', estado: 'pendientes', search: '' });
+  const [filters, setFilters] = useState({ tipo: 'todos', estado: 'pendiente', search: '' });
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [selectedIncidencia, setSelectedIncidencia] = useState(null);
   const [resolutionAction, setResolutionAction] = useState('');
@@ -42,17 +42,21 @@ const ResolucionIncidencias = () => {
   const [resolutionDetails, setResolutionDetails] = useState({ hora: '', tipo: 'ENTRADA' });
 
   const filteredData = useMemo(() => {
-    return incidencias.filter(item => {
-      const searchLower = filters.search.toLowerCase();
+    return incidencias.filter((item) => {
+      const searchLower = (filters.search || '').toLowerCase();
+      const tipo = item.tipo || item.tipo_incidencia || 'otros';
+      const estado = item.estado || item.estado_resolucion || 'pendiente';
+      const nombre = (item.empleado && item.empleado.nombre) || item.nombre || `Marcación ${item.id_marcacion ?? item.id}`;
+      const ci = (item.empleado && item.empleado.ci) || item.ci || '';
       return (
-        (filters.tipo === 'todos' || item.tipo === filters.tipo) &&
-        (filters.estado === 'todos' || item.estado === filters.estado) &&
-        (item.empleado.nombre.toLowerCase().includes(searchLower) || item.empleado.ci.toLowerCase().includes(searchLower))
+        (filters.tipo === 'todos' || tipo === filters.tipo) &&
+        (filters.estado === 'todos' || estado === filters.estado) &&
+        (nombre.toLowerCase().includes(searchLower) || ci.toLowerCase().includes(searchLower))
       );
     });
-  }, [filters]);
+  }, [filters, incidencias]);
 
-  const pendientesCount = incidencias.filter(i => i.estado === 'pendiente').length;
+  const pendientesCount = incidencias.filter(i => (i.estado === 'pendiente' || i.estado_resolucion === 'pendiente')).length;
 
   useEffect(() => {
     fetchIncidencias();
@@ -61,8 +65,14 @@ const ResolucionIncidencias = () => {
   const fetchIncidencias = async () => {
     try {
       const resp = await getIncidenciasPendientes();
-      // resp may be an array or an object with items
-      const items = Array.isArray(resp) ? resp : resp.items ?? [];
+      // resp may be an array or an object with items or value
+      const items = Array.isArray(resp)
+        ? resp
+        : Array.isArray(resp.items)
+        ? resp.items
+        : Array.isArray(resp.value)
+        ? resp.value
+        : [];
       setIncidencias(items);
     } catch (err) {
       console.error(err);
@@ -148,11 +158,11 @@ const ResolucionIncidencias = () => {
           <div className="space-y-3">
             <label className="flex items-center gap-3 p-3 rounded-md border has-[:checked]:border-primary has-[:checked]:bg-blue-50">
               <input type="radio" name="resolution" value="conservar_primera" onChange={e => setResolutionAction(e.target.value)} className="form-radio text-primary"/>
-              <span className="text-sm">Conservar la primera marcación ({selectedIncidencia.marcaciones[0].hora})</span>
+              <span className="text-sm">Conservar la primera marcación ({selectedIncidencia?.marcaciones?.[0]?.hora ?? '—'})</span>
             </label>
             <label className="flex items-center gap-3 p-3 rounded-md border has-[:checked]:border-primary has-[:checked]:bg-blue-50">
               <input type="radio" name="resolution" value="conservar_ultima" onChange={e => setResolutionAction(e.target.value)} className="form-radio text-primary"/>
-              <span className="text-sm">Conservar la última marcación ({selectedIncidencia.marcaciones[1].hora})</span>
+              <span className="text-sm">Conservar la última marcación ({selectedIncidencia?.marcaciones?.[1]?.hora ?? '—'})</span>
             </label>
             <label className="flex items-center gap-3 p-3 rounded-md border has-[:checked]:border-primary has-[:checked]:bg-blue-50">
               <input type="radio" name="resolution" value="ignorar_ambas" onChange={e => setResolutionAction(e.target.value)} className="form-radio text-primary"/>
@@ -213,10 +223,10 @@ const ResolucionIncidencias = () => {
               </div>
               <div>
                 <label className="text-xs text-gray-500">Estado</label>
-                <select onChange={e => setFilters(f => ({...f, estado: e.target.value}))} defaultValue="pendientes" className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md">
-                  <option value="pendientes">Pendientes</option>
-                  <option value="resueltas">Resueltas</option>
-                  <option value="ignoradas">Ignoradas</option>
+                <select onChange={e => setFilters(f => ({...f, estado: e.target.value}))} defaultValue="pendiente" className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md">
+                  <option value="pendiente">Pendientes</option>
+                  <option value="resuelta">Resueltas</option>
+                  <option value="ignorada">Ignoradas</option>
                   <option value="todos">Todos</option>
                 </select>
               </div>
@@ -257,28 +267,28 @@ const ResolucionIncidencias = () => {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       <div className="flex-shrink-0 h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
-                        <span className="text-sm font-semibold text-gray-600">{item.empleado.iniciales}</span>
+                        <span className="text-sm font-semibold text-gray-600">{item.empleado?.iniciales ?? '—'}</span>
                       </div>
-                      <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">{item.empleado.nombre}</div>
-                      </div>
+                          <div className="ml-4">
+                            <div className="text-sm font-medium text-gray-900">{item.empleado?.nombre ?? item.nombre ?? `Marcación ${item.id_marcacion ?? item.id}`}</div>
+                          </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.empleado.ci}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(item.fecha).toLocaleDateString()}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full" style={{ backgroundColor: tipoIncidenciaConfig[item.tipo].bg, color: tipoIncidenciaConfig[item.tipo].text, border: `1px solid ${tipoIncidenciaConfig[item.tipo].border}` }}>
-                      {tipoIncidenciaConfig[item.tipo].label}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 italic" style={{color: '#4A5568'}}>{item.detalle}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full" style={{ backgroundColor: estadoConfig[item.estado].bg, color: estadoConfig[item.estado].text }}>
-                      {estadoConfig[item.estado].label}
-                    </span>
-                  </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.empleado?.ci ?? item.ci ?? '—'}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(item.created_at || item.fecha || Date.now()).toLocaleDateString()}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full" style={{ backgroundColor: tipoIncidenciaConfig[item.tipo_incidencia ?? item.tipo]?.bg ?? '#FFF5F5', color: tipoIncidenciaConfig[item.tipo_incidencia ?? item.tipo]?.text ?? '#000', border: `1px solid ${tipoIncidenciaConfig[item.tipo_incidencia ?? item.tipo]?.border ?? '#EEE'}` }}>
+                          {tipoIncidenciaConfig[item.tipo_incidencia ?? item.tipo]?.label ?? (item.tipo_incidencia ?? item.tipo)}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 italic" style={{color: '#4A5568'}}>{item.detalle ?? item.descripcion_resolucion ?? '—'}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full" style={{ backgroundColor: estadoConfig[item.estado_resolucion ?? item.estado]?.bg ?? '#FFF5F5', color: estadoConfig[item.estado_resolucion ?? item.estado]?.text ?? '#000' }}>
+                          {estadoConfig[item.estado_resolucion ?? item.estado]?.label ?? (item.estado_resolucion ?? item.estado)}
+                        </span>
+                      </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    {item.estado === 'pendiente' && (
+                    {(item.estado === 'pendiente' || item.estado_resolucion === 'pendiente') && (
                       <div className="flex items-center gap-2">
                         <button onClick={() => openPanel(item)} className="text-primary hover:text-primary-light">
                           <CheckCircle size={20} />
@@ -314,24 +324,28 @@ const ResolucionIncidencias = () => {
               <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
                 <h3 className="font-semibold mb-3">Datos de la Marcación</h3>
                 <div className="space-y-2 text-sm">
-                  <p><strong>Empleado:</strong> {selectedIncidencia?.empleado.nombre} ({selectedIncidencia?.empleado.ci})</p>
-                  <p><strong>Fecha:</strong> {new Date(selectedIncidencia?.fecha).toLocaleDateString()}</p>
+                  <p><strong>Empleado:</strong> {selectedIncidencia?.empleado?.nombre ?? selectedIncidencia?.nombre ?? '—'} ({selectedIncidencia?.empleado?.ci ?? selectedIncidencia?.ci ?? '—'})</p>
+                  <p><strong>Fecha:</strong> {new Date(selectedIncidencia?.created_at || selectedIncidencia?.fecha || Date.now()).toLocaleDateString()}</p>
                   <div className="flex items-center gap-2">
                     <strong>Tipo:</strong>
-                    <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full" style={{ backgroundColor: tipoIncidenciaConfig[selectedIncidencia.tipo].bg, color: tipoIncidenciaConfig[selectedIncidencia.tipo].text, border: `1px solid ${tipoIncidenciaConfig[selectedIncidencia.tipo].border}` }}>
-                      {tipoIncidenciaConfig[selectedIncidencia.tipo].label}
+                    <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full" style={{ backgroundColor: tipoIncidenciaConfig[selectedIncidencia?.tipo ?? selectedIncidencia?.tipo_incidencia]?.bg ?? '#FFF5F5', color: tipoIncidenciaConfig[selectedIncidencia?.tipo ?? selectedIncidencia?.tipo_incidencia]?.text ?? '#000', border: `1px solid ${tipoIncidenciaConfig[selectedIncidencia?.tipo ?? selectedIncidencia?.tipo_incidencia]?.border ?? '#EEE'}` }}>
+                      {tipoIncidenciaConfig[selectedIncidencia?.tipo ?? selectedIncidencia?.tipo_incidencia]?.label ?? (selectedIncidencia?.tipo ?? selectedIncidencia?.tipo_incidencia)}
                     </span>
                   </div>
                   <div>
                     <strong>Marcaciones registradas:</strong>
                     <ul className="mt-1 space-y-1 pl-2">
-                      {selectedIncidencia?.marcaciones.map((m, i) => (
-                        <li key={i} className="flex items-center gap-2 text-gray-600">
-                          {m.tipo === 'ENTRADA' ? <LogIn size={14} className="text-green-500"/> : <LogOut size={14} className="text-red-500"/>}
-                          <span>{m.hora}</span>
-                          <span className="text-xs bg-gray-200 px-1.5 py-0.5 rounded">{m.origen}</span>
-                        </li>
-                      ))}
+                      {selectedIncidencia?.marcaciones && Array.isArray(selectedIncidencia.marcaciones) ? (
+                        selectedIncidencia.marcaciones.map((m, i) => (
+                          <li key={i} className="flex items-center gap-2 text-gray-600">
+                            {m.tipo === 'ENTRADA' ? <LogIn size={14} className="text-green-500"/> : <LogOut size={14} className="text-red-500"/>}
+                            <span>{m.hora}</span>
+                            <span className="text-xs bg-gray-200 px-1.5 py-0.5 rounded">{m.origen}</span>
+                          </li>
+                        ))
+                      ) : (
+                        <li className="text-sm text-gray-600">Sin detalles de marcaciones</li>
+                      )}
                     </ul>
                   </div>
                 </div>

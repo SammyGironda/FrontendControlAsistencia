@@ -144,9 +144,33 @@ const IngestaExcel = () => {
         getMarcacionesDuplicadas(),
         getArchivos({ skip: 0, limit: 100 }),
       ]);
-      setOrphanRows(Array.isArray(huerfanas) ? huerfanas : huerfanas.items ?? []);
-      setDuplicateRows(Array.isArray(duplicadas) ? duplicadas : duplicadas.items ?? []);
-      setArchivos(Array.isArray(archivosResp) ? archivosResp : archivosResp.items ?? []);
+      setOrphanRows(
+        Array.isArray(huerfanas)
+          ? huerfanas
+          : Array.isArray(huerfanas.items)
+          ? huerfanas.items
+          : Array.isArray(huerfanas.value)
+          ? huerfanas.value
+          : []
+      );
+      setDuplicateRows(
+        Array.isArray(duplicadas)
+          ? duplicadas
+          : Array.isArray(duplicadas.items)
+          ? duplicadas.items
+          : Array.isArray(duplicadas.value)
+          ? duplicadas.value
+          : []
+      );
+      setArchivos(
+        Array.isArray(archivosResp)
+          ? archivosResp
+          : Array.isArray(archivosResp.items)
+          ? archivosResp.items
+          : Array.isArray(archivosResp.value)
+          ? archivosResp.value
+          : []
+      );
     } catch (err) {
       console.error(err);
     }

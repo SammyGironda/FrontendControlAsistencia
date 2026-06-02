@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import {
   LayoutDashboard, Users, Upload, CalendarCheck,
-  FileText, Settings, ClipboardList, LogOut, AlertCircle
+  FileText, Settings, ClipboardList, LogOut, AlertCircle, FileSignature
 } from 'lucide-react';
 import useAuthStore from '../../store/authStore';
 import { getIncidencias } from '../../api/marcaciones';
@@ -10,6 +10,7 @@ import { getIncidencias } from '../../api/marcaciones';
 const navItems = [
   { name: 'Dashboard', icon: LayoutDashboard, path: '/' },
   { name: 'Empleados', icon: Users, path: '/empleados' },
+  { name: 'Contratos', icon: FileSignature, path: '/contratos' },
   { 
     name: 'Ingesta de Marcaciones', 
     icon: Upload, 

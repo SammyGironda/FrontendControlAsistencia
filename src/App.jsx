@@ -10,6 +10,7 @@ import ResolucionIncidencias from './pages/marcaciones/ResolucionIncidencias';
 import AsistenciaDiaria from './pages/asistencia/AsistenciaDiaria';
 import Reportes from './pages/reportes/Reportes';
 import Configuracion from './pages/configuracion/Configuracion';
+import Roles from './pages/configuracion/Roles';
 import Contratos from './pages/contratos/Contratos';
 
 function App() {
@@ -29,6 +30,7 @@ function App() {
           <Route path="/asistencia" element={<AsistenciaDiaria />} />
           <Route path="/reportes" element={<Reportes />} />
           <Route path="/configuracion" element={<Configuracion />} />
+          <Route path="/configuracion/roles" element={<Roles />} />
           {/* Add more private routes here */}
         </Route>
       </Route>

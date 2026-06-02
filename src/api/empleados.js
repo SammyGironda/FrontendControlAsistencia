@@ -71,6 +71,30 @@ export const getHorarios = async () => {
   return data;
 };
 
+// Helper: activar o reactivar empleado desde estado por_habilitar o suspendido
+export const activarEmpleado = async (id) => {
+  const response = await client.put(`${API_PREFIX}/empleados/${id}/reactivar`);
+  return response.data;
+};
+
+// Helper: rehabilitar empleado desde estado baja a por_habilitar
+export const rehabilitarEmpleado = async (id) => {
+  const response = await client.put(`${API_PREFIX}/empleados/${id}/habilitar`);
+  return response.data;
+};
+
+// Helper: suspender empleado desde estado activo
+export const suspenderEmpleado = async (id, payload = {}) => {
+  const response = await client.put(`${API_PREFIX}/empleados/${id}/suspender`, payload);
+  return response.data;
+};
+
+// Helper: reactivar empleado desde estado suspendido a activo
+export const reactivarEmpleado = async (id) => {
+  const response = await client.put(`${API_PREFIX}/empleados/${id}/reactivar`);
+  return response.data;
+};
+
 // Helper: dar de baja (soft-delete) de empleado usando el endpoint del backend
 export const darBajaEmpleado = async (id, payload = {}) => {
   // payload: { motivo?: string, fecha_efectiva?: 'YYYY-MM-DD' }

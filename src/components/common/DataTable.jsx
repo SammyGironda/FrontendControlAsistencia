@@ -28,11 +28,19 @@ const DataTable = ({
   }, [debouncedSearchTerm, onSearch]);
 
   const columns = useMemo(() => {
-    return columnsData.map(col => ({
-      accessorKey: col.accessor,
-      header: col.Header,
-      cell: col.Cell ? ({ row }) => col.Cell({ value: row.getValue(col.accessor), row }) : undefined,
-    }));
+    return columnsData.map((col, index) => {
+      const hasAccessor = typeof col.accessor !== 'undefined';
+      return {
+        id: col.id || (hasAccessor ? col.accessor : `col-${index}`),
+        accessorKey: hasAccessor ? col.accessor : undefined,
+        header: col.Header,
+        cell: col.Cell
+          ? hasAccessor
+            ? ({ row }) => col.Cell({ value: row.getValue(col.accessor), row })
+            : ({ row }) => col.Cell({ row })
+          : undefined,
+      };
+    });
   }, [columnsData]);
 
   const table = useReactTable({

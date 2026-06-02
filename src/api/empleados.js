@@ -48,8 +48,12 @@ export const actualizarEmpleado = async (id, data) => {
 };
 
 export const eliminarEmpleado = async (id) => {
-  const response = await client.delete(`${API_PREFIX}/empleados/${id}`);
-  return response.status === 204 ? null : response.data;
+  // TODO: DELETE /api/v1/empleados/{id} no existe en el backend.
+  // El backend implementa un soft-delete vía PUT /empleados/{id}/dar-baja
+  // Si se requiere eliminar desde el frontend, usar darBajaEmpleado(id, { motivo, fecha_efectiva })
+  // const response = await client.delete(`${API_PREFIX}/empleados/${id}`);
+  // return response.status === 204 ? null : response.data;
+  throw new Error('TODO: este endpoint DELETE /empleados/{id} no existe en el backend');
 };
 
 export const getCargos = async () => {
@@ -65,5 +69,12 @@ export const getDepartamentos = async () => {
 export const getHorarios = async () => {
   const { data } = await client.get(`${API_PREFIX}/horarios/`);
   return data;
+};
+
+// Helper: dar de baja (soft-delete) de empleado usando el endpoint del backend
+export const darBajaEmpleado = async (id, payload = {}) => {
+  // payload: { motivo?: string, fecha_efectiva?: 'YYYY-MM-DD' }
+  const response = await client.put(`${API_PREFIX}/empleados/${id}/dar-baja`, payload);
+  return response.data;
 };
 

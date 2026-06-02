@@ -6,6 +6,8 @@ import EstadoBadge from '../../components/common/EstadoBadge';
 import { format, formatDistanceToNow } from 'date-fns';
 import { es } from "date-fns/locale/es";
 import { Eye, Edit, Trash2, Plus, Search, ChevronDown } from 'lucide-react';
+import { darBajaEmpleado } from '../../api/empleados';
+import { toast } from 'react-hot-toast';
 import { Tooltip } from 'react-tooltip';
 
 const getInitials = (name = '') => {
@@ -122,16 +124,27 @@ const EmpleadosListado = () => {
         Header: 'ACCIONES',
         Cell: ({ row }) => (
           <div className="flex items-center space-x-3">
-            <button 
-                onClick={() => navigate(`/empleados/editar/${row.original.id}`)} 
+            <button
+                onClick={() => navigate(`/empleados/editar/${row.original.id}`)}
                 className="text-gray-400 hover:text-blue-600"
                 data-tooltip-id="actions-tooltip"
                 data-tooltip-content="Editar"
             >
               <Edit className="w-5 h-5" />
             </button>
-            <button 
-                onClick={() => console.log('delete', row.original.id)} 
+            <button
+                onClick={async () => {
+                  const ok = window.confirm('¿Seguro que deseas dar de baja a este empleado?');
+                  if (!ok) return;
+                  try {
+                    await darBajaEmpleado(row.original.id, { motivo: 'Baja desde interfaz' });
+                    toast.success('Empleado dado de baja con éxito');
+                    refetch();
+                  } catch (err) {
+                    const msg = err.response?.data?.detail || err.message || 'Error al dar de baja';
+                    toast.error(msg);
+                  }
+                }}
                 className="text-gray-400 hover:text-red-600"
                 data-tooltip-id="actions-tooltip"
                 data-tooltip-content="Eliminar"

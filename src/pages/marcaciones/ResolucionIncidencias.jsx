@@ -110,6 +110,22 @@ const ResolucionIncidencias = () => {
 
   const canConfirmResolution = Boolean(selectedIncidencia && (resolutionAction || observacion || file));
 
+  const handleIgnoreIncidencia = async (incidencia) => {
+    if (!incidencia) return;
+
+    try {
+      await resolverIncidencia(incidencia.id, {
+        estado_resolucion: 'ignorado',
+        descripcion_resolucion: 'Incidencia marcada como ignorada desde la acción rápida.',
+        evidencia_url: null,
+        id_resuelto_por: user?.id ?? 1,
+      });
+      await fetchIncidencias();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const handleConfirmResolution = async () => {
     if (!selectedIncidencia) return;
 
@@ -330,7 +346,11 @@ const ResolucionIncidencias = () => {
                         <button onClick={() => openPanel(item)} className="text-primary hover:text-primary-light">
                           <CheckCircle size={20} />
                         </button>
-                        <button className="text-gray-400 hover:text-gray-600">
+                        <button
+                          onClick={() => handleIgnoreIncidencia(item)}
+                          className="text-gray-400 hover:text-gray-600"
+                          title="Marcar como ignorada"
+                        >
                           <XCircle size={20} />
                         </button>
                       </div>

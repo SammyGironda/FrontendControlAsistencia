@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { AlertCircle, CheckCircle, XCircle, Search, ChevronDown, Upload, Paperclip, LogIn, LogOut } from 'lucide-react';
 import Header from '../../components/layout/Header';
 import { getIncidenciasPendientes, resolverIncidencia } from '../../api/marcaciones';
+import useAuthStore from '../../store/authStore';
 
 // Mock data - Remplazar con llamada a la API
 const mockIncidencias = [
@@ -20,8 +21,8 @@ const tipoIncidenciaConfig = {
 
 const estadoConfig = {
   pendiente: { bg: '#FFF5F5', text: '#731B07', label: 'Pendiente' },
-  resuelta: { bg: '#F0FFF4', text: '#376644', label: 'Resuelta' },
-  ignorada: { bg: '#F7FAFC', text: '#777F8F', label: 'Ignorada' },
+  resuelto: { bg: '#F0FFF4', text: '#376644', label: 'Resuelto' },
+  ignorado: { bg: '#F7FAFC', text: '#777F8F', label: 'Ignorado' },
 };
 
 const getRowBgColor = (tipo) => {
@@ -40,12 +41,20 @@ const ResolucionIncidencias = () => {
   const [incidencias, setIncidencias] = useState([]);
   const [observacion, setObservacion] = useState('');
   const [resolutionDetails, setResolutionDetails] = useState({ hora: '', tipo: 'ENTRADA' });
+  const { user } = useAuthStore();
+
+  const normalizeEstado = (estado) => {
+    if (!estado) return 'pendiente';
+    if (estado === 'resuelta') return 'resuelto';
+    if (estado === 'ignorada') return 'ignorado';
+    return estado;
+  };
 
   const filteredData = useMemo(() => {
     return incidencias.filter((item) => {
       const searchLower = (filters.search || '').toLowerCase();
       const tipo = item.tipo || item.tipo_incidencia || 'otros';
-      const estado = item.estado || item.estado_resolucion || 'pendiente';
+      const estado = normalizeEstado(item.estado || item.estado_resolucion || 'pendiente');
       const nombre = (item.empleado && item.empleado.nombre) || item.nombre || `Marcación ${item.id_marcacion ?? item.id}`;
       const ci = (item.empleado && item.empleado.ci) || item.ci || '';
       return (
@@ -56,7 +65,7 @@ const ResolucionIncidencias = () => {
     });
   }, [filters, incidencias]);
 
-  const pendientesCount = incidencias.filter(i => (i.estado === 'pendiente' || i.estado_resolucion === 'pendiente')).length;
+  const pendientesCount = incidencias.filter(i => normalizeEstado(i.estado || i.estado_resolucion) === 'pendiente').length;
 
   useEffect(() => {
     fetchIncidencias();
@@ -89,6 +98,8 @@ const ResolucionIncidencias = () => {
     setSelectedIncidencia(null);
     setResolutionAction('');
     setFile(null);
+    setObservacion('');
+    setResolutionDetails({ hora: '', tipo: 'ENTRADA' });
   };
   
   const handleFileChange = (e) => {
@@ -97,24 +108,23 @@ const ResolucionIncidencias = () => {
     }
   };
 
+  const canConfirmResolution = Boolean(selectedIncidencia && (resolutionAction || observacion || file));
+
   const handleConfirmResolution = async () => {
     if (!selectedIncidencia) return;
-    // Map UI selection to backend payload
+
+    const ignoredActions = ['ignorar', 'ignorar_ambas'];
+    const normalizedStatus = ignoredActions.includes(resolutionAction) ? 'ignorado' : 'resuelto';
+    const evidenciaUrl = file ? `/docs/evidencias/${encodeURIComponent(file.name)}` : null;
     const payload = {
-      estado_resolucion: resolutionAction === 'ignorar' ? 'ignorada' : 'resuelta',
-      descripcion_resolucion: observacion || `Acción: ${resolutionAction}`,
-      evidencia_url: null,
-      id_resuelto_por: null,
-      detalle_resolucion: {
-        hora: resolutionDetails.hora || null,
-        tipo: resolutionDetails.tipo || null,
-        action: resolutionAction,
-      },
+      estado_resolucion: normalizedStatus,
+      descripcion_resolucion: observacion || (resolutionAction ? `Acción: ${resolutionAction}` : 'Resolución registrada'),
+      evidencia_url: evidenciaUrl,
+      id_resuelto_por: user?.id ?? 1,
     };
 
     try {
       await resolverIncidencia(selectedIncidencia.id, payload);
-      // refresh list
       await fetchIncidencias();
       closePanel();
     } catch (err) {
@@ -135,12 +145,21 @@ const ResolucionIncidencias = () => {
             </label>
             {resolutionAction === 'completar' && (
               <div className="pl-8 space-y-2">
-                <input type="time" className="w-full border-gray-300 rounded-md shadow-sm"/>
-                <select className="w-full border-gray-300 rounded-md shadow-sm">
-                  <option>ENTRADA</option>
-                  <option>SALIDA</option>
+                <input
+                  type="time"
+                  value={resolutionDetails.hora}
+                  onChange={(e) => setResolutionDetails((prev) => ({ ...prev, hora: e.target.value }))}
+                  className="w-full border-gray-300 rounded-md shadow-sm"
+                />
+                <select
+                  value={resolutionDetails.tipo}
+                  onChange={(e) => setResolutionDetails((prev) => ({ ...prev, tipo: e.target.value }))}
+                  className="w-full border-gray-300 rounded-md shadow-sm"
+                >
+                  <option value="ENTRADA">ENTRADA</option>
+                  <option value="SALIDA">SALIDA</option>
                 </select>
-                <p className="text-xs text-gray-500">Se creará una marcación Manual.</p>
+                <p className="text-xs text-gray-500">Se creará una marcación manual.</p>
               </div>
             )}
             <label className="flex items-center gap-3 p-3 rounded-md border has-[:checked]:border-primary has-[:checked]:bg-blue-50">
@@ -177,13 +196,31 @@ const ResolucionIncidencias = () => {
               <input type="radio" name="resolution" value="corregir_entrada" onChange={e => setResolutionAction(e.target.value)} className="form-radio text-primary"/>
               <span className="text-sm">Corregir hora de entrada manualmente</span>
             </label>
-            {resolutionAction === 'corregir_entrada' && <div className="pl-8"><input type="time" className="w-full border-gray-300 rounded-md shadow-sm"/></div>}
+            {resolutionAction === 'corregir_entrada' && (
+              <div className="pl-8">
+                <input
+                  type="time"
+                  value={resolutionDetails.hora}
+                  onChange={(e) => setResolutionDetails((prev) => ({ ...prev, hora: e.target.value }))}
+                  className="w-full border-gray-300 rounded-md shadow-sm"
+                />
+              </div>
+            )}
             
             <label className="flex items-center gap-3 p-3 rounded-md border has-[:checked]:border-primary has-[:checked]:bg-blue-50">
               <input type="radio" name="resolution" value="corregir_salida" onChange={e => setResolutionAction(e.target.value)} className="form-radio text-primary"/>
               <span className="text-sm">Corregir hora de salida manualmente</span>
             </label>
-            {resolutionAction === 'corregir_salida' && <div className="pl-8"><input type="time" className="w-full border-gray-300 rounded-md shadow-sm"/></div>}
+            {resolutionAction === 'corregir_salida' && (
+              <div className="pl-8">
+                <input
+                  type="time"
+                  value={resolutionDetails.hora}
+                  onChange={(e) => setResolutionDetails((prev) => ({ ...prev, hora: e.target.value }))}
+                  className="w-full border-gray-300 rounded-md shadow-sm"
+                />
+              </div>
+            )}
 
             <label className="flex items-center gap-3 p-3 rounded-md border has-[:checked]:border-primary has-[:checked]:bg-blue-50">
               <input type="radio" name="resolution" value="eliminar_ambas" onChange={e => setResolutionAction(e.target.value)} className="form-radio text-primary"/>
@@ -283,8 +320,8 @@ const ResolucionIncidencias = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 italic" style={{color: '#4A5568'}}>{item.detalle ?? item.descripcion_resolucion ?? '—'}</td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full" style={{ backgroundColor: estadoConfig[item.estado_resolucion ?? item.estado]?.bg ?? '#FFF5F5', color: estadoConfig[item.estado_resolucion ?? item.estado]?.text ?? '#000' }}>
-                          {estadoConfig[item.estado_resolucion ?? item.estado]?.label ?? (item.estado_resolucion ?? item.estado)}
+                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full" style={{ backgroundColor: estadoConfig[normalizeEstado(item.estado_resolucion ?? item.estado)]?.bg ?? '#FFF5F5', color: estadoConfig[normalizeEstado(item.estado_resolucion ?? item.estado)]?.text ?? '#000' }}>
+                          {estadoConfig[normalizeEstado(item.estado_resolucion ?? item.estado)]?.label ?? normalizeEstado(item.estado_resolucion ?? item.estado)}
                         </span>
                       </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -394,7 +431,7 @@ const ResolucionIncidencias = () => {
 
             <div className="p-4 border-t flex justify-end gap-3">
               <button onClick={closePanel} className="px-4 py-2 text-sm font-semibold rounded-md border border-gray-300">Cancelar</button>
-              <button onClick={handleConfirmResolution} disabled={!resolutionAction} className="px-4 py-2 text-sm font-semibold text-white bg-primary rounded-md disabled:bg-gray-300">Confirmar Resolución</button>
+              <button onClick={handleConfirmResolution} disabled={!canConfirmResolution} className="px-4 py-2 text-sm font-semibold text-white bg-primary rounded-md disabled:bg-gray-300">Confirmar Resolución</button>
             </div>
           </div>
         </div>

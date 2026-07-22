@@ -82,9 +82,9 @@ const RenovarContratoModal = ({ contrato, isOpen, onClose, onSuccess }) => {
   const diasRestantes = contrato.fecha_fin ? Math.ceil((new Date(contrato.fecha_fin) - new Date()) / 86400000) : null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6">
-      <div className="w-full max-w-xl overflow-hidden rounded-2xl bg-white shadow-xl">
-        <div className="flex items-center justify-between border-b border-gray-200 px-6 py-5">
+    <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 overflow-y-auto px-4 py-6">
+      <div className="w-full max-w-xl mx-auto flex flex-col rounded-2xl bg-white shadow-xl max-h-none">
+        <div className="flex items-center justify-between flex-shrink-0 border-b border-gray-200 px-6 pt-5 pb-0">
           <div className="flex items-center gap-3">
             <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
               <RefreshCw className="w-6 h-6" />
@@ -98,75 +98,77 @@ const RenovarContratoModal = ({ contrato, isOpen, onClose, onSuccess }) => {
           </button>
         </div>
 
-        <div className="space-y-6 px-6 py-6">
-          <div className="rounded-2xl bg-slate-50 p-4">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="text-sm font-semibold text-slate-900">{`${contrato.empleado_nombre || 'Empleado'} (${contrato.id_empleado})`}</p>
-                <p className="text-sm text-slate-500">{contrato.tipo_contrato === 'plazo_fijo' ? 'Plazo Fijo' : 'Indefinido'}</p>
+        <div className="px-6 py-5">
+          <div className="space-y-6">
+            <div className="rounded-2xl bg-slate-50 p-4">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-slate-900">{`${contrato.empleado_nombre || 'Empleado'} (${contrato.id_empleado})`}</p>
+                  <p className="text-sm text-slate-500">{contrato.tipo_contrato === 'plazo_fijo' ? 'Plazo Fijo' : 'Indefinido'}</p>
+                </div>
+                <div className="space-y-1 text-right">
+                  <p className="text-sm text-slate-500">Fin actual</p>
+                  <p className="text-sm font-semibold text-slate-900">{formatFecha(contrato.fecha_fin)}</p>
+                </div>
               </div>
-              <div className="space-y-1 text-right">
-                <p className="text-sm text-slate-500">Fin actual</p>
-                <p className="text-sm font-semibold text-slate-900">{formatFecha(contrato.fecha_fin)}</p>
+              <div className="mt-4 flex items-center justify-between gap-3 rounded-2xl bg-white p-4">
+                <div>
+                  <p className="text-xs uppercase tracking-wider text-slate-500">Salario actual</p>
+                  <p className="mt-1 font-semibold text-slate-900">{formatMoneda(Number(contrato.salario_base))}</p>
+                </div>
+                <span className="rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-700">
+                  Vence en {diasRestantes !== null ? `${diasRestantes} día${diasRestantes === 1 ? '' : 's'}` : '—'}
+                </span>
               </div>
             </div>
-            <div className="mt-4 flex items-center justify-between gap-3 rounded-2xl bg-white p-4">
-              <div>
-                <p className="text-xs uppercase tracking-wider text-slate-500">Salario actual</p>
-                <p className="mt-1 font-semibold text-slate-900">{formatMoneda(Number(contrato.salario_base))}</p>
-              </div>
-              <span className="rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-700">
-                Vence en {diasRestantes !== null ? `${diasRestantes} día${diasRestantes === 1 ? '' : 's'}` : '—'}
-              </span>
-            </div>
-          </div>
 
-          <form className="grid gap-4">
-            <div>
-              <label className="block text-sm font-semibold mb-2">Nueva fecha de fin</label>
-              <input
-                type="date"
-                value={fechaFin}
-                onChange={(e) => setFechaFin(e.target.value)}
-                className="w-full rounded-2xl border border-gray-200 bg-white py-3 px-4 text-sm text-slate-900 shadow-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-              />
-              {contrato.fecha_fin && (
-                <p className="mt-2 text-xs text-slate-500">Sugerencia: {formatFecha(addYear(addDays(contrato.fecha_fin, 1)))}</p>
-              )}
-            </div>
-            <div>
-              <label className="block text-sm font-semibold mb-2">Nuevo salario base (Bs.)</label>
-              <input
-                type="number"
-                min="0"
-                value={salarioBase}
-                onChange={(e) => setSalarioBase(e.target.value)}
-                className="w-full rounded-2xl border border-gray-200 bg-white py-3 px-4 text-sm text-slate-900 shadow-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-              />
-              {variation !== null && (
-                <p className={`mt-2 text-xs ${variation >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
-                  Variación: {variation >= 0 ? '+' : ''}{variation.toFixed(1)}% respecto al contrato anterior
-                </p>
-              )}
-            </div>
-            <div>
-              <label className="block text-sm font-semibold mb-2">Observación</label>
-              <textarea
-                rows="2"
-                value={observacion}
-                onChange={(e) => setObservacion(e.target.value)}
-                placeholder="Notas adicionales..."
-                className="w-full rounded-2xl border border-gray-200 bg-white py-3 px-4 text-sm text-slate-900 shadow-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-              />
-            </div>
-          </form>
+            <form className="grid gap-4">
+              <div>
+                <label className="block text-sm font-semibold mb-2">Nueva fecha de fin</label>
+                <input
+                  type="date"
+                  value={fechaFin}
+                  onChange={(e) => setFechaFin(e.target.value)}
+                  className="w-full rounded-2xl border border-gray-200 bg-white py-3 px-4 text-sm text-slate-900 shadow-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                />
+                {contrato.fecha_fin && (
+                  <p className="mt-2 text-xs text-slate-500">Sugerencia: {formatFecha(addYear(addDays(contrato.fecha_fin, 1)))}</p>
+                )}
+              </div>
+              <div>
+                <label className="block text-sm font-semibold mb-2">Nuevo salario base (Bs.)</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={salarioBase}
+                  onChange={(e) => setSalarioBase(e.target.value)}
+                  className="w-full rounded-2xl border border-gray-200 bg-white py-3 px-4 text-sm text-slate-900 shadow-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                />
+                {variation !== null && (
+                  <p className={`mt-2 text-xs ${variation >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
+                    Variación: {variation >= 0 ? '+' : ''}{variation.toFixed(1)}% respecto al contrato anterior
+                  </p>
+                )}
+              </div>
+              <div>
+                <label className="block text-sm font-semibold mb-2">Observación</label>
+                <textarea
+                  rows="2"
+                  value={observacion}
+                  onChange={(e) => setObservacion(e.target.value)}
+                  placeholder="Notas adicionales..."
+                  className="w-full rounded-2xl border border-gray-200 bg-white py-3 px-4 text-sm text-slate-900 shadow-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                />
+              </div>
+            </form>
 
-          <div className="rounded-2xl bg-sky-50 border border-sky-200 p-4 text-sm text-slate-700">
-            Al renovar, el contrato actual se marcará como 'finalizado' y se creará uno nuevo con los datos ingresados. El historial se conserva.
+            <div className="rounded-2xl bg-sky-50 border border-sky-200 p-4 text-sm text-slate-700">
+              Al renovar, el contrato actual se marcará como 'finalizado' y se creará uno nuevo con los datos ingresados. El historial se conserva.
+            </div>
           </div>
         </div>
 
-        <div className="flex items-center justify-end gap-3 border-t border-gray-200 px-6 py-4 bg-slate-50">
+        <div className="flex-shrink-0 flex items-center justify-end gap-3 border-t border-gray-200 bg-slate-50 px-6 py-4">
           <button
             type="button"
             onClick={onClose}

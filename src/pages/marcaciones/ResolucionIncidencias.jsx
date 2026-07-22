@@ -137,6 +137,9 @@ const ResolucionIncidencias = () => {
       descripcion_resolucion: observacion || (resolutionAction ? `Acción: ${resolutionAction}` : 'Resolución registrada'),
       evidencia_url: evidenciaUrl,
       id_resuelto_por: user?.id ?? 1,
+      accion_resolucion: resolutionAction || undefined,
+      hora_correccion: resolutionDetails.hora || undefined,
+      tipo_marcacion_correccion: resolutionDetails.tipo || undefined,
     };
 
     try {
@@ -151,7 +154,9 @@ const ResolucionIncidencias = () => {
   const renderResolutionOptions = () => {
     if (!selectedIncidencia) return null;
 
-    switch (selectedIncidencia.tipo) {
+    const tipo = selectedIncidencia.tipo_incidencia ?? selectedIncidencia.tipo;
+
+    switch (tipo) {
       case 'huerfana':
         return (
           <div className="space-y-3">

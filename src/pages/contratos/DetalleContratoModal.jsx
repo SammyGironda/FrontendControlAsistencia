@@ -33,9 +33,9 @@ const DetalleContratoModal = ({ contratoId, isOpen, onClose }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6">
-      <div className="w-full max-w-xl overflow-hidden rounded-2xl bg-white shadow-xl">
-        <div className={`border-b-4 ${styles.border} px-6 py-5 flex items-center justify-between`}>
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50 overflow-y-auto">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg mx-auto my-4 flex flex-col max-h-[90vh]">
+        <div className="flex justify-between items-center p-5 border-b border-gray-200 flex-shrink-0">
           <div>
             <h2 className="text-lg font-semibold text-slate-900">Detalle del Contrato</h2>
           </div>
@@ -44,7 +44,7 @@ const DetalleContratoModal = ({ contratoId, isOpen, onClose }) => {
           </button>
         </div>
 
-        <div className="space-y-6 px-6 py-6">
+        <div className="overflow-y-auto flex-1 p-5">
           {contratoQuery.isLoading ? (
             <div className="space-y-3">
               <div className="h-6 w-48 rounded bg-slate-200 animate-pulse" />
@@ -134,7 +134,7 @@ const DetalleContratoModal = ({ contratoId, isOpen, onClose }) => {
           )}
         </div>
 
-        <div className="flex justify-end border-t border-slate-200 px-6 py-4">
+        <div className="p-4 border-t border-gray-200 flex justify-end flex-shrink-0">
           <button
             type="button"
             onClick={onClose}

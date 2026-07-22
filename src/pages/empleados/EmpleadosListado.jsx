@@ -354,8 +354,8 @@ const EmpleadosListado = () => {
   const inactiveCount = empleadosVisibles.length - activeCount;
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 bg-gray-50 min-h-screen">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
+    <div className="flex flex-col h-full min-w-0">
+      <div className="flex flex-wrap items-start justify-between gap-4 mb-4">
         <div>
             <h1 className="text-2xl font-bold text-gray-800">Gestión de Empleados</h1>
             <p className="text-sm text-gray-500 mt-1">
@@ -364,16 +364,15 @@ const EmpleadosListado = () => {
         </div>
         <Link
           to="/empleados/nuevo"
-          className="mt-4 sm:mt-0 inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          className="flex-shrink-0 flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-semibold hover:bg-primary-hover transition-colors whitespace-nowrap"
         >
           <Plus className="-ml-1 mr-2 h-5 w-5" />
           Nuevo Empleado
         </Link>
       </div>
-
       <div className="bg-white p-4 rounded-lg shadow-sm mb-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-4 items-center">
-            <div className="lg:col-span-5 relative">
+        <div className="flex flex-wrap gap-3 mb-4 items-center">
+            <div className="relative flex-1 min-w-[200px]">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
                     type="text"
@@ -383,31 +382,31 @@ const EmpleadosListado = () => {
                         setSearch(e.target.value);
                         setPage(1);
                     }}
-                    className="pl-10 pr-4 py-2 border border-gray-300 rounded-md w-full focus:ring-blue-500 focus:border-blue-500"
+                    className="flex-1 min-w-[200px] pl-10 pr-4 py-2 border border-gray-300 rounded-md w-full focus:ring-blue-500 focus:border-blue-500"
                 />
             </div>
-              <div className="lg:col-span-3 relative">
+              <div className="relative flex-shrink-0 min-w-[140px]">
                 <input
                   type="number"
                   name="id_departamento"
                   value={filters.id_departamento}
                   onChange={handleFilterChange}
                   placeholder="ID Departamento"
-                  className="appearance-none bg-transparent border-gray-300 rounded-md w-full py-2 pl-3 pr-10 text-gray-700 focus:ring-blue-500 focus:border-blue-500"
+                  className="flex-shrink-0 min-w-[140px] appearance-none bg-transparent border-gray-300 rounded-md w-full py-2 pl-3 pr-10 text-gray-700 focus:ring-blue-500 focus:border-blue-500"
                 />
             </div>
-            <div className="lg:col-span-3 relative">
+            <div className="relative flex-shrink-0 min-w-[140px]">
                 <input
                   type="number"
                   name="id_cargo"
                   value={filters.id_cargo}
                   onChange={handleFilterChange}
                   placeholder="ID Cargo"
-                  className="appearance-none bg-transparent border-gray-300 rounded-md w-full py-2 pl-3 pr-10 text-gray-700 focus:ring-blue-500 focus:border-blue-500"
+                  className="flex-shrink-0 min-w-[140px] appearance-none bg-transparent border-gray-300 rounded-md w-full py-2 pl-3 pr-10 text-gray-700 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
-              <div className="lg:col-span-1 relative">
-                <select name="estado" value={filters.estado} onChange={handleFilterChange} className="appearance-none bg-transparent border-gray-300 rounded-md w-full py-2 pl-3 pr-10 text-gray-700 focus:ring-blue-500 focus:border-blue-500">
+              <div className="relative flex-shrink-0 min-w-[140px]">
+                <select name="estado" value={filters.estado} onChange={handleFilterChange} className="flex-shrink-0 min-w-[140px] appearance-none bg-transparent border-gray-300 rounded-md w-full py-2 pl-3 pr-10 text-gray-700 focus:ring-blue-500 focus:border-blue-500">
                     <option value="">Todos los estados</option>
                   <option value="activo">Activo</option>
                   <option value="baja">Baja</option>
@@ -415,25 +414,29 @@ const EmpleadosListado = () => {
                   <option value="por_habilitar">Por habilitar</option>
                 </select>
             </div>
-              <div className="lg:col-span-1 text-sm text-gray-500 text-right">
+              <div className="text-sm text-gray-500 text-right flex-shrink-0">
                 {empleadosVisibles.length} resultados
               </div>
         </div>
       </div>
 
-      <DataTable
-        columns={columns}
+      <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
+          <DataTable
+            columns={columns}
             data={empleadosVisibles}
-        loading={isLoading}
-        error={error}
-        onRetry={refetch}
-        pagination={{
-          page,
-          limit,
+            loading={isLoading}
+            error={error}
+            onRetry={refetch}
+            pagination={{
+              page,
+              limit,
               total: empleadosVisibles.length,
-        }}
-        onPageChange={handlePageChange}
-      />
+            }}
+            onPageChange={handlePageChange}
+          />
+        </div>
+      </div>
 
       <ActivarEmpleadoModal
         empleado={empleadoSeleccionado}

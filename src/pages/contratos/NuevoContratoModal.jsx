@@ -132,9 +132,9 @@ const NuevoContratoModal = ({ isOpen, onClose, onSuccess, empleadoPreseleccionad
   };
 
   return !isOpen ? null : (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6">
-      <div className="w-full max-w-2xl rounded-2xl bg-white shadow-xl overflow-hidden">
-        <div className="flex items-center justify-between px-6 py-5 border-b border-gray-200">
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50 overflow-y-auto">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-xl mx-auto my-4 flex flex-col max-h-[90vh]">
+        <div className="flex justify-between items-center p-5 border-b border-gray-200 flex-shrink-0">
           <div>
             <h2 className="text-lg font-semibold text-slate-900">Nuevo Contrato</h2>
           </div>
@@ -142,9 +142,9 @@ const NuevoContratoModal = ({ isOpen, onClose, onSuccess, empleadoPreseleccionad
             <X className="w-5 h-5" />
           </button>
         </div>
-
-        <div className="space-y-6 px-6 py-5">
-          <div>
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1">
+          <div className="overflow-y-auto flex-1 p-5">
+            <div>
             <p className="text-sm font-semibold text-slate-900 mb-3">Tipo de contrato</p>
             <div className="grid grid-cols-2 gap-3">
               <button
@@ -287,9 +287,9 @@ const NuevoContratoModal = ({ isOpen, onClose, onSuccess, empleadoPreseleccionad
                 />
               </div>
             </div>
-          </div>
+            </div>
 
-          <div className="rounded-2xl bg-sky-50 border border-sky-200 p-4 text-sm text-slate-700">
+            <div className="rounded-2xl bg-sky-50 border border-sky-200 p-4 text-sm text-slate-700">
             <div className="flex items-start gap-3">
               <span className="mt-1 inline-flex h-7 w-7 items-center justify-center rounded-full bg-sky-100 text-sky-700">
                 <Info className="w-4 h-4" />
@@ -301,25 +301,25 @@ const NuevoContratoModal = ({ isOpen, onClose, onSuccess, empleadoPreseleccionad
               </p>
             </div>
           </div>
-        </div>
+          </div>
 
-        <div className="flex items-center justify-end gap-3 border-t border-gray-200 px-6 py-4 bg-slate-50">
-          <button
-            type="button"
-            onClick={handleClose}
-            className="rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-900 hover:bg-slate-100"
-          >
-            Cancelar
-          </button>
-          <button
-            type="button"
-            onClick={handleSubmit}
-            disabled={crearIndefinidoMutation.isLoading || crearPlazoFijoMutation.isLoading}
-            className="inline-flex items-center justify-center rounded-2xl bg-primary px-5 py-3 text-sm font-semibold text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {crearIndefinidoMutation.isLoading || crearPlazoFijoMutation.isLoading ? 'Creando...' : 'Crear Contrato'}
-          </button>
-        </div>
+          <div className="p-4 border-t border-gray-200 flex justify-end gap-3 flex-shrink-0 bg-gray-50 rounded-b-xl">
+            <button
+              type="button"
+              onClick={handleClose}
+              className="rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-900 hover:bg-slate-100"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={crearIndefinidoMutation.isLoading || crearPlazoFijoMutation.isLoading}
+              className="inline-flex items-center justify-center rounded-2xl bg-primary px-5 py-3 text-sm font-semibold text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {crearIndefinidoMutation.isLoading || crearPlazoFijoMutation.isLoading ? 'Creando...' : 'Crear Contrato'}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );

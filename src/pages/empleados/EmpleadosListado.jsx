@@ -2,11 +2,10 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQueryClient, useMutation } from '@tanstack/react-query';
 import { useEmpleados } from '../../hooks/useEmpleados';
-import DataTable from '../../components/common/DataTable';
 import EstadoBadge from '../../components/common/EstadoBadge';
 import { format, formatDistanceToNow } from 'date-fns';
 import { es } from "date-fns/locale/es";
-import { Clock, Edit, Trash2, Plus, Search, UserCheck, UserX, PauseCircle, RefreshCw, Info, AlertTriangle, Loader2 } from 'lucide-react';
+import { Clock, Edit, Trash2, Plus, Search, UserCheck, UserX, PauseCircle, RefreshCw, Info, AlertTriangle, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { activarEmpleado, rehabilitarEmpleado, suspenderEmpleado, darBajaEmpleado } from '../../api/empleados';
 import { toast } from 'react-hot-toast';
 import { Tooltip } from 'react-tooltip';
@@ -364,7 +363,7 @@ const EmpleadosListado = () => {
         </div>
         <Link
           to="/empleados/nuevo"
-          className="flex-shrink-0 flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-semibold hover:bg-primary-hover transition-colors whitespace-nowrap"
+          className="sticky right-0 z-10 flex-shrink-0 flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-semibold hover:bg-primary-hover transition-colors whitespace-nowrap"
         >
           <Plus className="-ml-1 mr-2 h-5 w-5" />
           Nuevo Empleado
@@ -420,23 +419,19 @@ const EmpleadosListado = () => {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <DataTable
-            columns={columns}
-            data={empleadosVisibles}
-            loading={isLoading}
-            error={error}
-            onRetry={refetch}
-            pagination={{
-              page,
-              limit,
-              total: empleadosVisibles.length,
-            }}
-            onPageChange={handlePageChange}
-          />
-        </div>
-      </div>
+      <EmpleadosTable
+        columns={columns}
+        data={empleadosVisibles}
+        loading={isLoading}
+        error={error}
+        onRetry={refetch}
+        pagination={{
+          page,
+          limit,
+          total: empleadosVisibles.length,
+        }}
+        onPageChange={handlePageChange}
+      />
 
       <ActivarEmpleadoModal
         empleado={empleadoSeleccionado}
@@ -474,6 +469,142 @@ const EmpleadosListado = () => {
         onClose={() => setIsAsignarDrawerOpen(false)}
         onAsignacionExitosa={refetch}
       />
+    </div>
+  );
+};
+
+const columnWidths = {
+  nombres: 'min-w-[300px] w-[28%]',
+  ci_numero: 'min-w-[150px] w-[12%]',
+  id_cargo: 'min-w-[130px] w-[10%]',
+  id_departamento: 'min-w-[180px] w-[14%]',
+  fecha_ingreso: 'min-w-[160px] w-[12%]',
+  estado: 'min-w-[120px] w-[8%]',
+  acciones: 'w-[16%] min-w-[190px]',
+};
+
+const EmpleadosTable = ({ columns, data, loading, error, onRetry, pagination, onPageChange }) => {
+  const { page, limit, total } = pagination;
+  const maxPages = Math.ceil(total / limit);
+
+  const handlePageChange = (newPage) => {
+    if (newPage > 0 && newPage <= maxPages) {
+      onPageChange({ page: newPage, limit });
+    }
+  };
+
+  const handleLimitChange = (event) => {
+    onPageChange({ page: 1, limit: Number(event.target.value) });
+  };
+
+  const renderRows = () => {
+    if (loading) {
+      return [...Array(5)].map((_, rowIndex) => (
+        <tr key={rowIndex} className="animate-pulse">
+          {columns.map((column, columnIndex) => (
+            <td key={column.id || column.accessor || columnIndex} className={`px-6 py-4 whitespace-nowrap ${column.id === 'acciones' ? 'sticky right-0 z-10 bg-white shadow-[-4px_0_6px_-6px_rgba(0,0,0,0.35)]' : ''}`}>
+              <div className="h-4 bg-gray-200 rounded" />
+            </td>
+          ))}
+        </tr>
+      ));
+    }
+
+    if (error) {
+      return (
+        <tr>
+          <td colSpan={columns.length} className="text-center py-12">
+            <div className="flex flex-col items-center">
+              <h3 className="text-lg font-semibold text-red-700">OcurriÃ³ un error</h3>
+              <p className="text-gray-500 mb-4">{error?.message || 'No se pudieron cargar los datos.'}</p>
+              {onRetry && <button onClick={onRetry} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Reintentar</button>}
+            </div>
+          </td>
+        </tr>
+      );
+    }
+
+    if (data.length === 0) {
+      return (
+        <tr>
+          <td colSpan={columns.length} className="text-center py-12">
+            <div className="flex flex-col items-center">
+              <Search className="w-12 h-12 text-gray-400 mb-4" />
+              <h3 className="text-lg font-semibold text-gray-700">No se encontraron resultados</h3>
+              <p className="text-gray-500">Intenta con otros filtros o tÃ©rminos de bÃºsqueda.</p>
+            </div>
+          </td>
+        </tr>
+      );
+    }
+
+    return data.map((empleado) => (
+      <tr key={empleado.id} className="hover:bg-gray-50">
+        {columns.map((column, columnIndex) => {
+          const isActions = column.id === 'acciones';
+          const value = column.accessor ? empleado[column.accessor] : undefined;
+          return (
+            <td
+              key={column.id || column.accessor || columnIndex}
+              className={`px-6 py-4 whitespace-nowrap text-sm ${isActions ? 'sticky right-0 z-10 bg-white shadow-[-4px_0_6px_-6px_rgba(0,0,0,0.35)]' : ''}`}
+            >
+              {column.Cell ? column.Cell({ value, row: { original: empleado } }) : value}
+            </td>
+          );
+        })}
+      </tr>
+    ));
+  };
+
+  return (
+    <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[1230px] table-auto divide-y divide-gray-200">
+          <colgroup>
+            {columns.map((column, index) => (
+              <col key={column.id || column.accessor || index} className={columnWidths[column.id || column.accessor]} />
+            ))}
+          </colgroup>
+          <thead className="bg-gray-50">
+            <tr>
+              {columns.map((column, index) => {
+                const isActions = column.id === 'acciones';
+                return (
+                  <th
+                    key={column.id || column.accessor || index}
+                    className={`px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ${isActions ? 'sticky right-0 z-20 bg-gray-50 shadow-[-4px_0_6px_-6px_rgba(0,0,0,0.35)]' : ''}`}
+                  >
+                    {column.Header}
+                  </th>
+                );
+              })}
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">{renderRows()}</tbody>
+        </table>
+      </div>
+      <div className="px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+        <div className="flex-1 flex justify-between sm:hidden">
+          <button onClick={() => handlePageChange(page - 1)} disabled={page <= 1} className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">Anterior</button>
+          <button onClick={() => handlePageChange(page + 1)} disabled={page >= maxPages} className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">Siguiente</button>
+        </div>
+        <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+          <p className="text-sm text-gray-700">Mostrando <span className="font-medium">{(page - 1) * limit + 1}</span> a <span className="font-medium">{Math.min(page * limit, total)}</span> de <span className="font-medium">{total}</span> resultados</p>
+          <div className="flex items-center">
+            <select value={limit} onChange={handleLimitChange} className="mx-4 border border-gray-300 rounded-md px-3 py-2 text-sm">
+              <option value={10}>10 / pÃ¡gina</option>
+              <option value={25}>25 / pÃ¡gina</option>
+              <option value={50}>50 / pÃ¡gina</option>
+              <option value={100}>100 / pÃ¡gina</option>
+            </select>
+            <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+              <button onClick={() => handlePageChange(page - 1)} disabled={page <= 1} className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"><ChevronLeft className="h-5 w-5" /></button>
+              <span className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">PÃ¡gina {page} de {maxPages}</span>
+              <button onClick={() => handlePageChange(page + 1)} disabled={page >= maxPages} className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"><ChevronRight className="h-5 w-5" /></button>
+            </nav>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

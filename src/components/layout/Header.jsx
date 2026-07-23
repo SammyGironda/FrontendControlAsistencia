@@ -1,4 +1,3 @@
-import React from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Upload, Home } from 'lucide-react';
 import { formatFecha } from '../../lib/formatters';
@@ -48,7 +47,7 @@ const Header = ({ title, subtitle }) => {
           {formatFecha(currentDate)}
         </span>
         <button
-          onClick={() => navigate('/marcaciones')}
+          onClick={() => navigate('/ingesta')}
           className="inline-flex items-center rounded-md bg-[#D9A404] px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm hover:bg-yellow-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D9A404]"
         >
           <Upload className="-ml-0.5 mr-1.5 h-5 w-5" aria-hidden="true" />

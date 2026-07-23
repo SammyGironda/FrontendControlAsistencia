@@ -1,6 +1,5 @@
-import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { X, Info, FileText, CheckCircle, AlertCircle, ShieldCheck } from 'lucide-react';
+import { X, FileText } from 'lucide-react';
 import { getContrato } from '../../api/contratos';
 import { getEmpleado } from '../../api/empleados';
 import { formatFecha, formatMoneda } from '../../lib/formatters';

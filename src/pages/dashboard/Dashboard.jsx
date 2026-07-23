@@ -15,9 +15,7 @@ import {
   Cake,
   AlertTriangle,
   CheckCircle,
-  ChevronRight,
   CalendarDays,
-  FileSpreadsheet,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import dayjs from 'dayjs';
@@ -61,7 +59,7 @@ const monthOptions = (() => {
 })();
 
 const formatMonthLabel = (mesKey) => {
-  const [year, month] = mesKey.split('-');
+  const [, month] = mesKey.split('-');
   const idx = Number(month) - 1;
   return MONTH_LABELS[idx] ?? mesKey;
 };
@@ -147,7 +145,6 @@ const Dashboard = () => {
 
   const {
     data: empleadosData,
-    isLoading: isLoadingEmpleados,
     isError: isErrorEmpleados,
   } = useQuery({
     queryKey: ['empleados', 'activo'],
@@ -157,7 +154,6 @@ const Dashboard = () => {
 
   const {
     data: horariosData,
-    isLoading: isLoadingHorarios,
     isError: isErrorHorarios,
   } = useQuery({
     queryKey: ['horarios', 'activos'],
@@ -167,8 +163,6 @@ const Dashboard = () => {
 
   const {
     data: archivosData,
-    isLoading: isLoadingArchivos,
-    isError: isErrorArchivos,
   } = useQuery({
     queryKey: ['marcaciones', 'archivos', 1],
     queryFn: () => getArchivos(),

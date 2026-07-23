@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { CheckSquare, X } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { finalizarContrato } from '../../api/contratos';

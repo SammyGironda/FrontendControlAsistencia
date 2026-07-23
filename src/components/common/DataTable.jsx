@@ -1,11 +1,10 @@
-import React, { useState, useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import {
   useReactTable,
   getCoreRowModel,
   flexRender,
 } from '@tanstack/react-table';
 import { ChevronLeft, ChevronRight, Search } from 'lucide-react';
-import { useDebounce } from 'use-debounce';
 
 const DataTable = ({
   columns: columnsData,
@@ -18,10 +17,9 @@ const DataTable = ({
   onRetry,
 }) => {
   const { page, limit, total } = pagination;
-  const [searchTerm, setSearchTerm] = useState('');
-  const [debouncedSearchTerm] = useDebounce(searchTerm, 400);
+  const debouncedSearchTerm = '';
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (onSearch) {
       onSearch(debouncedSearchTerm);
     }

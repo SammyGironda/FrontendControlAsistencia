@@ -57,7 +57,7 @@ export const actualizarEmpleado = async (id, data) => {
   return response.data;
 };
 
-export const eliminarEmpleado = async (id) => {
+export const eliminarEmpleado = async () => {
   // TODO: DELETE /api/v1/empleados/{id} no existe en el backend.
   // El backend implementa un soft-delete vía PUT /empleados/{id}/dar-baja
   // Si se requiere eliminar desde el frontend, usar darBajaEmpleado(id, { motivo, fecha_efectiva })

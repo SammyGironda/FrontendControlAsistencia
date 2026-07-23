@@ -1,17 +1,8 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import { AlertCircle, CheckCircle, XCircle, Search, ChevronDown, Upload, Paperclip, LogIn, LogOut } from 'lucide-react';
+import { useState, useMemo, useEffect } from 'react';
+import { AlertCircle, CheckCircle, XCircle, Search, Paperclip, LogIn, LogOut } from 'lucide-react';
 import Header from '../../components/layout/Header';
 import { getIncidenciasPendientes, resolverIncidencia } from '../../api/marcaciones';
 import useAuthStore from '../../store/authStore';
-
-// Mock data - Remplazar con llamada a la API
-const mockIncidencias = [
-  { id: 1, empleado: { nombre: 'Ana García', iniciales: 'AG', ci: '1234567 LP' }, fecha: '2026-05-28', tipo: 'huerfana', detalle: 'Entrada 08:03 — sin salida registrada', estado: 'pendiente', marcaciones: [{hora: '08:03', tipo: 'ENTRADA', origen: 'Biométrico'}] },
-  { id: 2, empleado: { nombre: 'Juan Pérez', iniciales: 'JP', ci: '7654321 CB' }, fecha: '2026-05-28', tipo: 'duplicada', detalle: 'Dos entradas: 07:58 y 08:01', estado: 'pendiente', marcaciones: [{hora: '07:58', tipo: 'ENTRADA', origen: 'Excel'}, {hora: '08:01', tipo: 'ENTRADA', origen: 'Excel'}] },
-  { id: 3, empleado: { nombre: 'María Rodriguez', iniciales: 'MR', ci: '8901234 SC' }, fecha: '2026-05-27', tipo: 'inconsistente', detalle: 'Salida (07:45) antes que entrada (08:03)', estado: 'pendiente', marcaciones: [{hora: '08:03', tipo: 'ENTRADA', origen: 'Biométrico'}, {hora: '07:45', tipo: 'SALIDA', origen: 'Biométrico'}] },
-  { id: 4, empleado: { nombre: 'Carlos López', iniciales: 'CL', ci: '4567890 OR' }, fecha: '2026-05-26', tipo: 'huerfana', detalle: 'Salida 18:30 — sin entrada registrada', estado: 'resuelta', marcaciones: [{hora: '18:30', tipo: 'SALIDA', origen: 'Excel'}] },
-  { id: 5, empleado: { nombre: 'Laura Fernandez', iniciales: 'LF', ci: '2345678 PT' }, fecha: '2026-05-25', tipo: 'duplicada', detalle: 'Dos salidas: 18:05 y 18:07', estado: 'ignorada', marcaciones: [{hora: '18:05', tipo: 'SALIDA', origen: 'Biométrico'}, {hora: '18:07', tipo: 'SALIDA', origen: 'Biométrico'}] },
-];
 
 const tipoIncidenciaConfig = {
   huerfana: { bg: '#FFFBEB', text: '#D97706', border: '#FDE68A', label: 'Huérfana' },
@@ -31,6 +22,13 @@ const getRowBgColor = (tipo) => {
   if (tipo === 'inconsistente') return '#FFF5F5';
   return 'white';
 }
+
+const formatIncidenciaFecha = (value) => {
+  if (!value) return '—';
+
+  const fecha = new Date(value);
+  return Number.isNaN(fecha.getTime()) ? '—' : fecha.toLocaleDateString();
+};
 
 const ResolucionIncidencias = () => {
   const [filters, setFilters] = useState({ tipo: 'todos', estado: 'pendiente', search: '' });
@@ -67,10 +65,6 @@ const ResolucionIncidencias = () => {
 
   const pendientesCount = incidencias.filter(i => normalizeEstado(i.estado || i.estado_resolucion) === 'pendiente').length;
 
-  useEffect(() => {
-    fetchIncidencias();
-  }, []);
-
   const fetchIncidencias = async () => {
     try {
       const resp = await getIncidenciasPendientes();
@@ -87,6 +81,10 @@ const ResolucionIncidencias = () => {
       console.error(err);
     }
   };
+
+  useEffect(() => {
+    fetchIncidencias();
+  }, []);
 
   const openPanel = (incidencia) => {
     setSelectedIncidencia(incidencia);
@@ -333,7 +331,7 @@ const ResolucionIncidencias = () => {
                     </div>
                   </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.empleado?.ci ?? item.ci ?? '—'}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(item.created_at || item.fecha || Date.now()).toLocaleDateString()}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatIncidenciaFecha(item.created_at || item.fecha)}</td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full" style={{ backgroundColor: tipoIncidenciaConfig[item.tipo_incidencia ?? item.tipo]?.bg ?? '#FFF5F5', color: tipoIncidenciaConfig[item.tipo_incidencia ?? item.tipo]?.text ?? '#000', border: `1px solid ${tipoIncidenciaConfig[item.tipo_incidencia ?? item.tipo]?.border ?? '#EEE'}` }}>
                           {tipoIncidenciaConfig[item.tipo_incidencia ?? item.tipo]?.label ?? (item.tipo_incidencia ?? item.tipo)}
@@ -387,7 +385,7 @@ const ResolucionIncidencias = () => {
                 <h3 className="font-semibold mb-3">Datos de la Marcación</h3>
                 <div className="space-y-2 text-sm">
                   <p><strong>Empleado:</strong> {selectedIncidencia?.empleado?.nombre ?? selectedIncidencia?.nombre ?? '—'} ({selectedIncidencia?.empleado?.ci ?? selectedIncidencia?.ci ?? '—'})</p>
-                  <p><strong>Fecha:</strong> {new Date(selectedIncidencia?.created_at || selectedIncidencia?.fecha || Date.now()).toLocaleDateString()}</p>
+                  <p><strong>Fecha:</strong> {formatIncidenciaFecha(selectedIncidencia?.created_at || selectedIncidencia?.fecha)}</p>
                   <div className="flex items-center gap-2">
                     <strong>Tipo:</strong>
                     <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full" style={{ backgroundColor: tipoIncidenciaConfig[selectedIncidencia?.tipo ?? selectedIncidencia?.tipo_incidencia]?.bg ?? '#FFF5F5', color: tipoIncidenciaConfig[selectedIncidencia?.tipo ?? selectedIncidencia?.tipo_incidencia]?.text ?? '#000', border: `1px solid ${tipoIncidenciaConfig[selectedIncidencia?.tipo ?? selectedIncidencia?.tipo_incidencia]?.border ?? '#EEE'}` }}>

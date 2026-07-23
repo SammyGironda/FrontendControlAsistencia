@@ -121,7 +121,7 @@ const Configuracion = () => {
         hora: horaFormato,
         nombre: primerHorario.nombre || 'primer turno',
       };
-    } catch (e) {
+    } catch {
       return null;
     }
   };
@@ -238,7 +238,7 @@ const Configuracion = () => {
               tolerancia_minutos: toleranciaMinutos,
             },
           });
-        } catch (error) {
+        } catch {
           errores.push(horario.nombre || `Turno ${horario.id}`);
         }
       }

@@ -75,7 +75,7 @@ const Roles = () => {
         })
       );
       setRoles(withCounts);
-    } catch (error) {
+    } catch {
       toast.error('No se pudieron cargar los roles.');
     } finally {
       setLoading(false);
@@ -139,7 +139,7 @@ const Roles = () => {
       }
       resetForm();
       await fetchRoles();
-    } catch (error) {
+    } catch {
       toast.error('No se pudo guardar el rol. Verifica los datos e inténtalo de nuevo.');
     } finally {
       setSaving(false);
@@ -166,7 +166,7 @@ const Roles = () => {
       toast.success(
         `Rol ${updated.activo ? 'activado' : 'desactivado'} correctamente`
       );
-    } catch (error) {
+    } catch {
       toast.error('No se pudo cambiar el estado del rol.');
     } finally {
       setTogglingRoleId(null);
@@ -194,7 +194,7 @@ const Roles = () => {
       }
       await fetchRoles();
       closeDeleteModal();
-    } catch (error) {
+    } catch {
       toast.error('No se pudo eliminar el rol.');
     } finally {
       setSaving(false);

@@ -26,7 +26,7 @@ export const useGenerarReporte = () => {
 
   return useMutation({
     mutationFn: async ({ tipo, payload = {}, idEmpleado, filename }) => {
-      let created = null;
+      let created;
 
       if (tipo === 'planilla') {
         created = await api.generarPlanilla(payload);

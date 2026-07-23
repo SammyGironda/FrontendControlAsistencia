@@ -1,12 +1,11 @@
-import React, { useMemo, useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import {
   getContratos,
 } from '../../api/contratos';
 import { getEmpleados } from '../../api/empleados';
 import { formatFecha, formatMoneda } from '../../lib/formatters';
-import { FilePlus, FileCheck, Infinity, Clock, AlertTriangle, Eye, RefreshCw, Edit, XCircle, CheckSquare, FileX, Search } from 'lucide-react';
-import { toast } from 'react-hot-toast';
+import { FilePlus, FileCheck, Infinity as InfinityIcon, Clock, AlertTriangle, Eye, RefreshCw, Edit, XCircle, CheckSquare, FileX, Search } from 'lucide-react';
 import NuevoContratoModal from './NuevoContratoModal';
 import DetalleContratoModal from './DetalleContratoModal';
 import RenovarContratoModal from './RenovarContratoModal';
@@ -24,7 +23,6 @@ const getDaysRemaining = (fechaFin) => {
 };
 
 const Contratos = () => {
-  const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [tipoFiltro, setTipoFiltro] = useState('');
   const [estadoFiltro, setEstadoFiltro] = useState('');
@@ -195,7 +193,7 @@ const Contratos = () => {
         </div>
         <div className="rounded-3xl border-l-4 border-success bg-white p-5 shadow-sm">
           <div className="flex items-center gap-3 text-success">
-            <Infinity className="h-5 w-5" />
+                    <InfinityIcon className="h-5 w-5" />
             <p className="text-sm font-semibold text-slate-900">Indefinidos</p>
           </div>
           <p className="mt-4 text-3xl font-semibold text-slate-900">{indefinidosCount}</p>
@@ -285,7 +283,7 @@ const Contratos = () => {
                       </td>
                       <td className="px-6 py-4 align-top">
                         <span className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold ${isPlazoFijo ? 'bg-amber-50 text-amber-700 border border-amber-100' : 'bg-emerald-50 text-emerald-700 border border-emerald-100'}`}>
-                          {isPlazoFijo ? <Clock className="h-3.5 w-3.5" /> : <Infinity className="h-3.5 w-3.5" />}
+                          {isPlazoFijo ? <Clock className="h-3.5 w-3.5" /> : <InfinityIcon className="h-3.5 w-3.5" />}
                           {contrato.tipo_contrato === 'indefinido' ? 'Indefinido' : 'Plazo Fijo'}
                         </span>
                       </td>

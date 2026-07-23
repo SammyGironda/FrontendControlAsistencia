@@ -1,9 +1,8 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { FilePlus, Infinity, Clock, X, Search, Info } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Infinity as InfinityIcon, Clock, X, Search, Info } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getEmpleados } from '../../api/empleados';
 import { crearContratoIndefinido, crearContratoPlazoFijo } from '../../api/contratos';
-import { formatFecha, formatMoneda } from '../../lib/formatters';
 import { toast } from 'react-hot-toast';
 
 const todayInputValue = () => new Date().toISOString().slice(0, 10);
@@ -154,7 +153,7 @@ const NuevoContratoModal = ({ isOpen, onClose, onSuccess, empleadoPreseleccionad
               >
                 <div className="flex items-center gap-3 mb-3">
                   <span className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
-                    <Infinity className="w-5 h-5" />
+                  <InfinityIcon className="w-5 h-5" />
                   </span>
                   <div>
                     <p className="font-semibold text-slate-900">Contrato Indefinido</p>

@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 
-// TEMPORAL: bypass de autenticación para desarrollo
-const BYPASS_AUTH = true; // Cambiaremos a FALSE cuando el backend esté listo
+// Solo habilitar de forma explícita para desarrollo local.
+const BYPASS_AUTH = import.meta.env.VITE_BYPASS_AUTH === 'true';
 
 const useAuthStore = create((set) => ({
   token: BYPASS_AUTH 

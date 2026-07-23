@@ -6,6 +6,7 @@ import {
   Pencil,
   Trash2,
   Loader2,
+  Layers,
   ChevronRight,
   RefreshCcw,
 } from 'lucide-react';
@@ -15,7 +16,6 @@ import { formatFecha } from '../../lib/formatters';
 import {
   crearFeriado,
   actualizarFeriado,
-  desactivarFeriado,
   eliminarFeriadoPermanente,
   getFeriados,
   getFeriadosAplicables,
@@ -86,7 +86,7 @@ const Feriados = () => {
   const buildQuery = (params) => {
     return Object.fromEntries(
       Object.entries(params).filter(
-        ([_, value]) => value !== '' && value !== null && value !== undefined
+        ([, value]) => value !== '' && value !== null && value !== undefined
       )
     );
   };
@@ -105,7 +105,7 @@ const Feriados = () => {
       });
       const data = await getFeriados(query);
       setFeriados(data);
-    } catch (error) {
+    } catch {
       toast.error('No se pudieron cargar los feriados.');
     } finally {
       setLoading(false);
@@ -143,7 +143,7 @@ const Feriados = () => {
       const data = await getFeriadosAplicables(dia, mes, codigo_departamento);
       setApplicableResults(data);
       setShowApplicableResults(true);
-    } catch (error) {
+    } catch {
       toast.error('No se pudieron cargar los feriados aplicables.');
     } finally {
       setLoading(false);
@@ -208,7 +208,7 @@ const Feriados = () => {
       resetForm();
       await fetchFeriados(filter);
       setShowApplicableResults(false);
-    } catch (error) {
+    } catch {
       toast.error('Error al guardar el feriado.');
     } finally {
       setSaving(false);
@@ -226,25 +226,8 @@ const Feriados = () => {
         )
       );
       toast.success(`Feriado ${item.activo ? 'desactivado' : 'activado'} correctamente.`);
-    } catch (error) {
+    } catch {
       toast.error('No se pudo actualizar el estado.');
-    } finally {
-      setActionLoadingId(null);
-    }
-  };
-
-  const handleSoftDelete = async (item) => {
-    setActionLoadingId(item.id);
-    try {
-      await desactivarFeriado(item.id);
-      setFeriados((current) =>
-        current.map((feriado) =>
-          feriado.id === item.id ? { ...feriado, activo: false } : feriado
-        )
-      );
-      toast.success('Feriado desactivado correctamente.');
-    } catch (error) {
-      toast.error('No se pudo desactivar el feriado.');
     } finally {
       setActionLoadingId(null);
     }
@@ -258,7 +241,7 @@ const Feriados = () => {
       setFeriados((current) => current.filter((item) => item.id !== deleteTarget.id));
       toast.success('Feriado eliminado permanentemente.');
       setDeleteTarget(null);
-    } catch (error) {
+    } catch {
       toast.error('No se pudo eliminar el feriado.');
     } finally {
       setActionLoadingId(null);

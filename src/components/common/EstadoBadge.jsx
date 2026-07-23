@@ -1,5 +1,3 @@
-import React from 'react';
-
 const EstadoBadge = ({ estado, size = 'md' }) => {
   const estadoMap = {
     activo: {

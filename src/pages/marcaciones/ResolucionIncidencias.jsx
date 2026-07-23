@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { AlertCircle, CheckCircle, XCircle, Search, Paperclip, LogIn, LogOut } from 'lucide-react';
 import Header from '../../components/layout/Header';
 import { getIncidenciasPendientes, resolverIncidencia } from '../../api/marcaciones';
+import { getEmpleado } from '../../api/empleados';
 import useAuthStore from '../../store/authStore';
 
 const tipoIncidenciaConfig = {
@@ -30,6 +31,23 @@ const formatIncidenciaFecha = (value) => {
   return Number.isNaN(fecha.getTime()) ? '—' : fecha.toLocaleDateString();
 };
 
+const getMarcacionesIncidencia = (incidencia) => (
+  Array.isArray(incidencia?.marcaciones) ? incidencia.marcaciones : []
+);
+
+const getEmpleadoIdIncidencia = (incidencia) => (
+  getMarcacionesIncidencia(incidencia)[0]?.id_empleado ?? null
+);
+
+const formatMarcaciones = (incidencia) => {
+  const marcaciones = getMarcacionesIncidencia(incidencia);
+  if (!marcaciones.length) return '—';
+
+  return marcaciones
+    .map((marcacion) => `${marcacion.tipo_marcacion ?? marcacion.tipo ?? 'Marcación'} ${marcacion.hora ?? '—'}`)
+    .join(' · ');
+};
+
 const ResolucionIncidencias = () => {
   const [filters, setFilters] = useState({ tipo: 'todos', estado: 'pendiente', search: '' });
   const [isPanelOpen, setIsPanelOpen] = useState(false);
@@ -37,6 +55,7 @@ const ResolucionIncidencias = () => {
   const [resolutionAction, setResolutionAction] = useState('');
   const [file, setFile] = useState(null);
   const [incidencias, setIncidencias] = useState([]);
+  const [empleadosPorId, setEmpleadosPorId] = useState({});
   const [observacion, setObservacion] = useState('');
   const [resolutionDetails, setResolutionDetails] = useState({ hora: '', tipo: 'ENTRADA' });
   const { user } = useAuthStore();
@@ -48,20 +67,24 @@ const ResolucionIncidencias = () => {
     return estado;
   };
 
+  const getEmpleadoIncidencia = (incidencia) => (
+    empleadosPorId[getEmpleadoIdIncidencia(incidencia)] ?? null
+  );
+
   const filteredData = useMemo(() => {
     return incidencias.filter((item) => {
       const searchLower = (filters.search || '').toLowerCase();
       const tipo = item.tipo || item.tipo_incidencia || 'otros';
       const estado = normalizeEstado(item.estado || item.estado_resolucion || 'pendiente');
-      const nombre = (item.empleado && item.empleado.nombre) || item.nombre || `Marcación ${item.id_marcacion ?? item.id}`;
-      const ci = (item.empleado && item.empleado.ci) || item.ci || '';
+      const empleadoIncidencia = getEmpleadoIncidencia(item);
+      const nombreEmpleado = empleadoIncidencia?.nombres || '';
       return (
         (filters.tipo === 'todos' || tipo === filters.tipo) &&
         (filters.estado === 'todos' || estado === filters.estado) &&
-        (nombre.toLowerCase().includes(searchLower) || ci.toLowerCase().includes(searchLower))
+        nombreEmpleado.toLowerCase().includes(searchLower)
       );
     });
-  }, [filters, incidencias]);
+  }, [filters, incidencias, empleadosPorId]);
 
   const pendientesCount = incidencias.filter(i => normalizeEstado(i.estado || i.estado_resolucion) === 'pendiente').length;
 
@@ -77,6 +100,14 @@ const ResolucionIncidencias = () => {
         ? resp.value
         : [];
       setIncidencias(items);
+
+      const idsEmpleados = [...new Set(
+        items.map(getEmpleadoIdIncidencia).filter((id) => Number.isInteger(id))
+      )];
+      const empleados = await Promise.all(
+        idsEmpleados.map(async (id) => [id, await getEmpleado(id)])
+      );
+      setEmpleadosPorId(Object.fromEntries(empleados));
     } catch (err) {
       console.error(err);
     }
@@ -308,11 +339,11 @@ const ResolucionIncidencias = () => {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Empleado</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">CI</th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Detalle</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Marcación(es)</th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
               </tr>
@@ -320,24 +351,26 @@ const ResolucionIncidencias = () => {
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredData.map((item) => (
                 <tr key={item.id} style={{ backgroundColor: getRowBgColor(item.tipo) }}>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-700">{item.id}</td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       <div className="flex-shrink-0 h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
-                        <span className="text-sm font-semibold text-gray-600">{item.empleado?.iniciales ?? '—'}</span>
+                        <span className="text-sm font-semibold text-gray-600">{getEmpleadoIncidencia(item)?.nombres?.slice(0, 1)?.toUpperCase() ?? '—'}</span>
                       </div>
                           <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900">{item.empleado?.nombre ?? item.nombre ?? `Marcación ${item.id_marcacion ?? item.id}`}</div>
+                            <div className="text-sm font-medium text-gray-900">{getEmpleadoIncidencia(item)?.nombres ?? 'Empleado no disponible'}</div>
                           </div>
                     </div>
                   </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.empleado?.ci ?? item.ci ?? '—'}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatIncidenciaFecha(item.created_at || item.fecha)}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatIncidenciaFecha(getMarcacionesIncidencia(item)[0]?.fecha_hora_marcacion || item.created_at || item.fecha)}</td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full" style={{ backgroundColor: tipoIncidenciaConfig[item.tipo_incidencia ?? item.tipo]?.bg ?? '#FFF5F5', color: tipoIncidenciaConfig[item.tipo_incidencia ?? item.tipo]?.text ?? '#000', border: `1px solid ${tipoIncidenciaConfig[item.tipo_incidencia ?? item.tipo]?.border ?? '#EEE'}` }}>
                           {tipoIncidenciaConfig[item.tipo_incidencia ?? item.tipo]?.label ?? (item.tipo_incidencia ?? item.tipo)}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 italic" style={{color: '#4A5568'}}>{item.detalle ?? item.descripcion_resolucion ?? '—'}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-700">
+                        {formatMarcaciones(item)}
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full" style={{ backgroundColor: estadoConfig[normalizeEstado(item.estado_resolucion ?? item.estado)]?.bg ?? '#FFF5F5', color: estadoConfig[normalizeEstado(item.estado_resolucion ?? item.estado)]?.text ?? '#000' }}>
                           {estadoConfig[normalizeEstado(item.estado_resolucion ?? item.estado)]?.label ?? normalizeEstado(item.estado_resolucion ?? item.estado)}
@@ -384,8 +417,8 @@ const ResolucionIncidencias = () => {
               <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
                 <h3 className="font-semibold mb-3">Datos de la Marcación</h3>
                 <div className="space-y-2 text-sm">
-                  <p><strong>Empleado:</strong> {selectedIncidencia?.empleado?.nombre ?? selectedIncidencia?.nombre ?? '—'} ({selectedIncidencia?.empleado?.ci ?? selectedIncidencia?.ci ?? '—'})</p>
-                  <p><strong>Fecha:</strong> {formatIncidenciaFecha(selectedIncidencia?.created_at || selectedIncidencia?.fecha)}</p>
+                  <p><strong>Empleado:</strong> {getEmpleadoIncidencia(selectedIncidencia)?.nombres ?? 'Empleado no disponible'}</p>
+                  <p><strong>Fecha:</strong> {formatIncidenciaFecha(getMarcacionesIncidencia(selectedIncidencia)[0]?.fecha_hora_marcacion || selectedIncidencia?.created_at || selectedIncidencia?.fecha)}</p>
                   <div className="flex items-center gap-2">
                     <strong>Tipo:</strong>
                     <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full" style={{ backgroundColor: tipoIncidenciaConfig[selectedIncidencia?.tipo ?? selectedIncidencia?.tipo_incidencia]?.bg ?? '#FFF5F5', color: tipoIncidenciaConfig[selectedIncidencia?.tipo ?? selectedIncidencia?.tipo_incidencia]?.text ?? '#000', border: `1px solid ${tipoIncidenciaConfig[selectedIncidencia?.tipo ?? selectedIncidencia?.tipo_incidencia]?.border ?? '#EEE'}` }}>
@@ -398,9 +431,9 @@ const ResolucionIncidencias = () => {
                       {selectedIncidencia?.marcaciones && Array.isArray(selectedIncidencia.marcaciones) ? (
                         selectedIncidencia.marcaciones.map((m, i) => (
                           <li key={i} className="flex items-center gap-2 text-gray-600">
-                            {m.tipo === 'ENTRADA' ? <LogIn size={14} className="text-green-500"/> : <LogOut size={14} className="text-red-500"/>}
-                            <span>{m.hora}</span>
-                            <span className="text-xs bg-gray-200 px-1.5 py-0.5 rounded">{m.origen}</span>
+                            {m.tipo_marcacion === 'ENTRADA' ? <LogIn size={14} className="text-green-500"/> : <LogOut size={14} className="text-red-500"/>}
+                            <span>{m.tipo_marcacion} · {m.hora}</span>
+                            <span className="text-xs bg-gray-200 px-1.5 py-0.5 rounded">{m.origen_dato}</span>
                           </li>
                         ))
                       ) : (

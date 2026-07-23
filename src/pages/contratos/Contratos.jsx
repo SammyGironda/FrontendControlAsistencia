@@ -117,7 +117,7 @@ const Contratos = () => {
   };
 
   return (
-    <div className="space-y-6 px-6 py-6">
+    <div className="w-full min-w-0 max-w-full space-y-6 px-6 py-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-slate-900">Gestión de Contratos</h1>
@@ -126,7 +126,7 @@ const Contratos = () => {
         <button
           type="button"
           onClick={() => abrirModal('nuevo')}
-          className="inline-flex items-center gap-2 rounded-2xl bg-primary px-5 py-3 text-sm font-semibold text-white transition hover:bg-primary/90"
+          className="sticky right-0 z-10 inline-flex items-center gap-2 rounded-2xl bg-primary px-5 py-3 text-sm font-semibold text-white transition hover:bg-primary/90"
         >
           <FilePlus className="h-4 w-4" />
           Nuevo Contrato
@@ -134,7 +134,7 @@ const Contratos = () => {
       </div>
 
       <div className="rounded-3xl bg-white p-5 shadow-sm">
-        <div className="grid gap-4 lg:grid-cols-[40%_1fr] xl:grid-cols-[40%_1fr]">
+        <div className="grid grid-cols-1 gap-4 2xl:grid-cols-[minmax(280px,2fr)_repeat(3,minmax(150px,1fr))]">
           <div className="relative">
             <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <input
@@ -145,7 +145,7 @@ const Contratos = () => {
               className="w-full rounded-2xl border border-gray-200 bg-white py-3 pl-11 pr-4 text-sm text-slate-900 shadow-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
             />
           </div>
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 2xl:contents">
             <select
               value={tipoFiltro}
               onChange={(e) => { setTipoFiltro(e.target.value); setPage(1); }}
@@ -182,7 +182,7 @@ const Contratos = () => {
         <div className="mt-4 text-sm text-slate-500 text-right">{totalResults} resultados</div>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <div className="rounded-3xl border-l-4 border-primary bg-white p-5 shadow-sm">
           <div className="flex items-center gap-3 text-primary">
             <FileCheck className="h-5 w-5" />
@@ -248,11 +248,11 @@ const Contratos = () => {
       ) : (
         <div className="overflow-hidden rounded-3xl bg-white shadow-sm">
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
+            <table className="min-w-[1500px] w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
                   {['EMPLEADO', 'TIPO', 'SALARIO BASE', 'INICIO', 'FIN', 'ESTADO', 'DÍAS RESTANTES', 'ACCIONES'].map((label) => (
-                    <th key={label} className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">{label}</th>
+                    <th key={label} className={`px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 ${label === 'ACCIONES' ? 'sticky right-0 z-20 min-w-[230px] bg-gray-50 shadow-[-4px_0_6px_-6px_rgba(0,0,0,0.35)]' : ''}`}>{label}</th>
                   ))}
                 </tr>
               </thead>
@@ -307,7 +307,7 @@ const Contratos = () => {
                           : <span className="text-sm font-semibold text-success">{contrato.dias_restantes} días</span>
                         }
                       </td>
-                      <td className="px-6 py-4 align-top">
+                      <td className={`sticky right-0 z-10 min-w-[230px] px-6 py-4 align-top shadow-[-4px_0_6px_-6px_rgba(0,0,0,0.35)] ${dias !== null && dias <= 30 ? 'bg-red-50' : dias !== null && dias <= 60 ? 'bg-amber-50' : 'bg-white'}`}>
                         <div className="flex flex-wrap gap-2">
                           <button
                             type="button"

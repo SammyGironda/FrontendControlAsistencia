@@ -57,6 +57,7 @@ const IngestaExcel = () => {
   });
   const [manualModal, setManualModal] = useState({ open: false, row: null, hora: '' });
   const [isImporting, setIsImporting] = useState(false);
+  const [uploadResult, setUploadResult] = useState(null);
   const { user } = useAuthStore();
 
   const resumenTexto = useMemo(() => {
@@ -96,6 +97,7 @@ const IngestaExcel = () => {
     setProgress(0);
     setSelectedFile(null);
     setIsImporting(false);
+    setUploadResult(null);
     setValidationData(mockValidation);
     setOrphanRows(mockValidation.huerfanas);
     setDuplicateRows(mockValidation.duplicados);
@@ -180,10 +182,11 @@ const IngestaExcel = () => {
     try {
       setIsImporting(true);
       const resp = await subirExcel(file, { id_subido_por: user?.id ?? user?.empleado_id ?? 1 });
+      setUploadResult(resp);
       // map UploadExcelResponse
       const errores = resp.errores || resp.filas_con_error || resp.filas_con_errores || resp.errors || [];
       const totalFilas = resp.total_filas ?? resp.filas_procesadas ?? resp.total ?? mockValidation.totalFilas;
-      const correctas = resp.correctas ?? resp.filas_correctas ?? 0;
+      const correctas = resp.correctas ?? resp.filas_correctas ?? resp.filas_procesadas ?? 0;
       const advertencias = resp.advertencias ?? 0;
       const erroresCriticos = Array.isArray(errores) ? errores : [];
 
@@ -194,6 +197,8 @@ const IngestaExcel = () => {
         advertencias,
         errores: erroresCriticos.length,
         erroresCriticos,
+        asistenciasCalculadas: resp.asistencias_calculadas ?? 0,
+        erroresAsistencia: resp.errores_asistencia ?? [],
       }));
 
       // fetch lists
@@ -215,11 +220,13 @@ const IngestaExcel = () => {
   }, []);
 
   const handleConfirmImport = () => {
+    if (!uploadResult) return;
     setIsImporting(true);
     setTimeout(() => {
       setIsImporting(false);
       setViewState('success');
-      toast.success('Importacion completada con exito.');
+      const detalleAsistencia = uploadResult.asistencias_calculadas ?? 0;
+      toast.success(`Importación completada: ${detalleAsistencia} asistencias diarias calculadas.`);
       setTimeout(() => navigate('/asistencia'), 1400);
     }, 1200);
   };
@@ -568,9 +575,9 @@ const IngestaExcel = () => {
                   <button
                     type="button"
                     onClick={handleConfirmImport}
-                    disabled={hasCriticalErrors || isImporting}
+                    disabled={!uploadResult || isImporting}
                     className={`rounded-md px-4 py-2 text-xs font-semibold text-gray-900 transition ${
-                      hasCriticalErrors || isImporting
+                      !uploadResult || isImporting
                         ? 'bg-gray-200 text-gray-400'
                         : 'bg-accent hover:bg-accent-hover'
                     }`}
@@ -588,6 +595,9 @@ const IngestaExcel = () => {
               <h2 className="mt-4 text-xl font-bold text-gray-800">Importacion completada</h2>
               <p className="mt-2 text-sm text-gray-500">
                 {validationData.correctas} marcaciones importadas correctamente
+              </p>
+              <p className="mt-1 text-sm text-gray-500">
+                {validationData.asistenciasCalculadas ?? 0} asistencias diarias calculadas automáticamente
               </p>
               <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
                 <button

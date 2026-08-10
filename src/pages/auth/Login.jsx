@@ -19,7 +19,7 @@ const Login = () => {
     setError('');
     try {
       const data = await login(username, password);
-      setAuth(data.token, {username}); 
+      setAuth(data.token, data.usuario);
       navigate('/');
     } catch {
       setError('Usuario o contraseña incorrectos. Intente de nuevo.');

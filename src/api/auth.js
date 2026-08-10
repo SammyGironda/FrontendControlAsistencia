@@ -2,29 +2,34 @@ import client from './client';
 
 const BYPASS_AUTH = import.meta.env.VITE_BYPASS_AUTH === 'true';
 
+const MOCK_USUARIO = {
+  id: 1,
+  username: 'dev-user',
+  id_rol: 1,
+  nombre_rol: 'Admin (bypass)',
+  id_empleado: null,
+};
+
+// Login real contra POST /api/v1/auth/login (JWT). Devuelve siempre
+// { token, usuario } — tanto en modo bypass como en modo real — para que
+// quien llame (Login.jsx) no tenga que ramificar según BYPASS_AUTH.
 export const login = async (username, password) => {
   if (BYPASS_AUTH) {
     return {
       token: 'temp-dev-token',
-      usuario_id: 1,
-      username,
-      rol_id: 1,
+      usuario: { ...MOCK_USUARIO, username },
     };
   }
 
-  const response = await client.post('/api/v1/usuarios/verify-credentials', null,{
-    params: {
-      username,
-      password,
-    },
+  const response = await client.post('/api/v1/auth/login', {
+    username,
+    password,
   });
 
-  const { usuario_id, username: backendUsername, rol_id } = response.data;
+  const { access_token, usuario } = response.data;
 
   return {
-    token: response.data.token ?? response.data.access_token ?? null,
-    usuario_id,
-    username: backendUsername,
-    rol_id,
+    token: access_token,
+    usuario,
   };
 };

@@ -23,10 +23,14 @@ client.interceptors.response.use(
     return response;
   },
   (error) => {
-    if (error.response && error.response.status === 401) {
+    // No deslogueamos/redirigimos si el 401 viene del propio intento de
+    // login: eso es "usuario o contraseña incorrectos", no una sesión
+    // vencida, y Login.jsx ya maneja ese error mostrando un mensaje inline.
+    const isLoginRequest = error.config?.url?.includes('/api/v1/auth/login');
+    if (error.response && error.response.status === 401 && !isLoginRequest) {
       useAuthStore.getState().logout();
       // Redirect to login page - assuming react-router-dom is used
-      window.location.href = '/login'; 
+      window.location.href = '/login';
     }
     return Promise.reject(error);
   }

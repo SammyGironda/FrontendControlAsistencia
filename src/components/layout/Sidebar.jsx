@@ -199,11 +199,11 @@ const Sidebar = () => {
         <div className="flex items-center gap-2.5 justify-between">
           <div className="flex items-center gap-2.5">
             <div className="flex-shrink-0 w-9 h-9 rounded-full bg-[#1E3A8A] flex items-center justify-center text-white font-semibold text-xs">
-              {user ? getInitials(user.nombre) : 'U'}
+              {user ? getInitials(user.username) : 'U'}
             </div>
             <div>
-              <p className="text-white font-medium text-sm">{user ? user.nombre : 'Usuario'}</p>
-              <p className="text-white/60 text-xs">{user ? user.rol : 'Rol'}</p>
+              <p className="text-white font-medium text-sm">{user ? user.username : 'Usuario'}</p>
+              <p className="text-white/60 text-xs">{user ? user.nombre_rol : 'Rol'}</p>
             </div>
           </div>
           <button className="flex-shrink-0 text-white/50 hover:text-white transition-colors">

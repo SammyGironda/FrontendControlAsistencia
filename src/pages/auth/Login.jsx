@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User, Lock, Eye, EyeOff, LoaderCircle } from 'lucide-react';
 import { login } from '../../api/auth';
@@ -11,7 +11,16 @@ const Login = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { setAuth } = useAuthStore();
+  const { setAuth, isAuthenticated } = useAuthStore();
+
+  // Si ya hay sesión (p.ej. el auto-login de VITE_BYPASS_AUTH en App.jsx ya
+  // corrió, o un usuario logueado navega manualmente a /login), no mostrar
+  // el formulario: redirigir de inmediato al dashboard.
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/', { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { AlertCircle, CheckCircle, XCircle, Search, Paperclip, LogIn, LogOut } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 import Header from '../../components/layout/Header';
 import { getIncidenciasPendientes, resolverIncidencia } from '../../api/marcaciones';
 import { getEmpleado } from '../../api/empleados';
@@ -151,7 +152,7 @@ const ResolucionIncidencias = () => {
       });
       await fetchIncidencias();
     } catch (err) {
-      console.error(err);
+      toast.error(err?.response?.data?.detail || 'No se pudo procesar la incidencia.');
     }
   };
 
@@ -176,7 +177,7 @@ const ResolucionIncidencias = () => {
       await fetchIncidencias();
       closePanel();
     } catch (err) {
-      console.error(err);
+      toast.error(err?.response?.data?.detail || 'No se pudo procesar la incidencia.');
     }
   };
 

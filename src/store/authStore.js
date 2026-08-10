@@ -1,20 +1,5 @@
 import { create } from 'zustand';
 
-// Solo habilitar de forma explícita para desarrollo local.
-const BYPASS_AUTH = import.meta.env.VITE_BYPASS_AUTH === 'true';
-
-// Forma real del objeto `usuario` que devuelve el backend
-// (POST /api/v1/auth/login y GET /api/v1/auth/me): id, username, id_rol,
-// nombre_rol, id_empleado. El mock de bypass usa la misma forma para que
-// Sidebar y el resto de consumidores de `user` no tengan que ramificar.
-const MOCK_USER = {
-  id: 1,
-  username: 'dev-user',
-  id_rol: 1,
-  nombre_rol: 'Admin (bypass)',
-  id_empleado: null,
-};
-
 const getStoredUser = () => {
   try {
     return JSON.parse(localStorage.getItem('user'));
@@ -23,16 +8,13 @@ const getStoredUser = () => {
   }
 };
 
+// Contenedor de estado "puro": no conoce el modo bypass. La decisión de
+// cómo se obtiene el primer token (login manual, o auto-login de bypass en
+// App.jsx) vive fuera de este archivo — ver App.jsx y api/auth.js.
 const useAuthStore = create((set) => ({
-  token: BYPASS_AUTH
-    ? 'temp-dev-token'
-    : (localStorage.getItem('access_token') || null),
-
-  user: BYPASS_AUTH
-    ? MOCK_USER
-    : getStoredUser(),
-
-  isAuthenticated: BYPASS_AUTH ? true : !!localStorage.getItem('access_token'),
+  token: localStorage.getItem('access_token') || null,
+  user: getStoredUser(),
+  isAuthenticated: !!localStorage.getItem('access_token'),
 
   setAuth: (token, user) => {
     localStorage.setItem('access_token', token);

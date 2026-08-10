@@ -1,26 +1,9 @@
 import client from './client';
 
-const BYPASS_AUTH = import.meta.env.VITE_BYPASS_AUTH === 'true';
-
-const MOCK_USUARIO = {
-  id: 1,
-  username: 'dev-user',
-  id_rol: 1,
-  nombre_rol: 'Admin (bypass)',
-  id_empleado: null,
-};
-
 // Login real contra POST /api/v1/auth/login (JWT). Devuelve siempre
-// { token, usuario } — tanto en modo bypass como en modo real — para que
-// quien llame (Login.jsx) no tenga que ramificar según BYPASS_AUTH.
+// { token, usuario } — tanto para el formulario de Login.jsx como para el
+// auto-login de desarrollo (VITE_BYPASS_AUTH) que dispara App.jsx al arrancar.
 export const login = async (username, password) => {
-  if (BYPASS_AUTH) {
-    return {
-      token: 'temp-dev-token',
-      usuario: { ...MOCK_USUARIO, username },
-    };
-  }
-
   const response = await client.post('/api/v1/auth/login', {
     username,
     password,
@@ -32,4 +15,16 @@ export const login = async (username, password) => {
     token: access_token,
     usuario,
   };
+};
+
+// Valida el token actual contra el backend (GET /api/v1/auth/me) y devuelve
+// el usuario asociado. Se usa al arrancar la app para confirmar que un token
+// persistido en localStorage sigue siendo válido (no expiró, el usuario
+// sigue activo). No atrapa errores: si el token es inválido/expiró, el
+// interceptor de respuesta de client.js ya maneja el 401 (toast + logout +
+// redirect); quien llama a getCurrentUser() puede además reaccionar por su
+// cuenta si lo necesita.
+export const getCurrentUser = async () => {
+  const response = await client.get('/api/v1/auth/me');
+  return response.data;
 };

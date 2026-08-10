@@ -1,4 +1,5 @@
 import axios from 'axios';
+import toast from 'react-hot-toast';
 import useAuthStore from '../store/authStore';
 
 const client = axios.create({
@@ -28,6 +29,7 @@ client.interceptors.response.use(
     // vencida, y Login.jsx ya maneja ese error mostrando un mensaje inline.
     const isLoginRequest = error.config?.url?.includes('/api/v1/auth/login');
     if (error.response && error.response.status === 401 && !isLoginRequest) {
+      toast.error('Tu sesión no es válida o expiró. Inicia sesión nuevamente.');
       useAuthStore.getState().logout();
       // Redirect to login page - assuming react-router-dom is used
       window.location.href = '/login';

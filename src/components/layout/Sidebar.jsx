@@ -3,7 +3,7 @@ import { useLocation, Link } from 'react-router-dom';
 import {
   LayoutDashboard, Users, Upload, CalendarCheck,
   FileText, Settings, ClipboardList, LogOut, AlertCircle, FileSignature,
-  SlidersHorizontal, Shield, CalendarX, ChevronDown
+  SlidersHorizontal, Shield, CalendarX, ChevronDown, Palmtree
 } from 'lucide-react';
 import useAuthStore from '../../store/authStore';
 import { getIncidenciasPendientes } from '../../api/marcaciones';
@@ -21,6 +21,7 @@ const navItems = [
     ]
   },
   { name: 'Asistencia y Cálculos', icon: CalendarCheck, path: '/asistencia' },
+  { name: 'Vacaciones', icon: Palmtree, path: '/vacaciones' },
   { name: 'Reportes', icon: FileText, path: '/reportes' },
   {
     name: 'Configuración',

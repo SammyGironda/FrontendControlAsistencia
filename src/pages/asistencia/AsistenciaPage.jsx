@@ -1,10 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
-import { format, parseISO, getDay, getDaysInMonth, isToday } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import {
   LayoutList,
   CalendarDays,
   SlidersHorizontal,
-  ChevronDown,
   AlertCircle,
   CalendarX,
   FileSpreadsheet,
@@ -13,6 +12,8 @@ import {
 } from 'lucide-react';
 import { useEmpleados, useAsistenciaEmpleado, useResumenMensual } from '../../hooks/useAsistencia';
 import { getAsistenciaEmpleado } from '../../api/asistencia';
+import MonthGrid from '../../components/common/MonthGrid';
+import SelectField from '../../components/common/SelectField';
 
 const colors = {
   primary: '#03178C',
@@ -96,22 +97,6 @@ const normalizeAsistenciaRow = (row) => ({
   origen_dato: row.origen_dato ?? row.origen ?? 'Manual',
   observacion: row.observacion ?? row.comentario ?? row.observaciones ?? '—',
 });
-
-const SelectField = ({ label, value, onChange, children }) => (
-  <label className="flex flex-col gap-1.5">
-    <span className="text-[11px] font-medium text-[#718096]">{label}</span>
-    <div className="relative">
-      <select
-        value={value}
-        onChange={onChange}
-        className="h-9 w-full appearance-none rounded-[8px] border border-[#E2E8F0] bg-white px-3 py-2 pr-9 text-[13px] text-[#1A202C] outline-none"
-      >
-        {children}
-      </select>
-      <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#718096]" />
-    </div>
-  </label>
-);
 
 const SummaryCard = ({ icon: Icon, label, value, accentColor }) => (
   <div className="flex min-w-[190px] flex-1 items-center gap-4 rounded-[10px] border border-[#E2E8F0] bg-white px-4 py-3">
@@ -200,22 +185,6 @@ const AsistenciaPage = () => {
     const startIndex = (safePage - 1) * pageSize;
     return filteredRows.slice(startIndex, startIndex + pageSize);
   }, [filteredRows, safePage]);
-
-  const calendarMonth = useMemo(() => {
-    return new Date(Number(anioSeleccionado), Number(mesSeleccionado) - 1, 1);
-  }, [anioSeleccionado, mesSeleccionado]);
-
-  const allDays = useMemo(() => {
-    const daysInMonth = getDaysInMonth(calendarMonth);
-    const leadingEmpty = (getDay(calendarMonth) + 6) % 7;
-    return Array.from({ length: leadingEmpty + daysInMonth }, (_, index) => {
-      if (index < leadingEmpty) {
-        return null;
-      }
-      const dayNumber = index - leadingEmpty + 1;
-      return new Date(Number(anioSeleccionado), Number(mesSeleccionado) - 1, dayNumber);
-    });
-  }, [calendarMonth, anioSeleccionado, mesSeleccionado]);
 
   const selectedRowsByDate = useMemo(() => {
     const map = new Map();
@@ -583,64 +552,45 @@ const AsistenciaPage = () => {
               Selecciona un empleado para ver el calendario detallado
             </div>
           ) : (
-            <div className="rounded-[12px] border border-[#E2E8F0] bg-white p-4">
-              <div className="grid gap-3 sm:grid-cols-7">
-                {['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map((day) => (
-                  <div key={day} className="text-center text-[11px] font-semibold uppercase tracking-[0.08em] text-[#718096]">
-                    {day}
-                  </div>
-                ))}
-              </div>
-              <div className="grid gap-3 sm:grid-cols-7">
-                {allDays.map((date, index) => {
-                  if (!date) {
-                    return <div key={`empty-${index}`} className="min-h-[98px] rounded-[8px] bg-[#F8FAFC] p-3" />;
-                  }
+            <MonthGrid
+              anio={anioSeleccionado}
+              mes={mesSeleccionado}
+              emptyState={renderEmptyState()}
+              getEstiloCelda={(date, dayKey) => {
+                const record = selectedEmpleadoId ? selectedRowsByDate.get(dayKey) : null;
+                return {
+                  backgroundColor: record ? rowBg[record.tipo_dia] || colors.white : colors.bg,
+                };
+              }}
+              renderDia={(date, dayKey) => {
+                const record = selectedEmpleadoId ? selectedRowsByDate.get(dayKey) : null;
+                const count = !selectedEmpleadoId ? calendarCountsByDate.get(dayKey) : 0;
 
-                  const dayKey = format(date, 'yyyy-MM-dd');
-                  const record = selectedEmpleadoId ? selectedRowsByDate.get(dayKey) : null;
-                  const count = !selectedEmpleadoId ? calendarCountsByDate.get(dayKey) : 0;
-                  const isTodayCell = isToday(date);
-                  const cellBg = record ? rowBg[record.tipo_dia] || colors.white : colors.bg;
-
-                  return (
-                    <div
-                      key={dayKey}
-                      className="min-h-[98px] rounded-[8px] border border-[#F7FAFC] p-3"
-                      style={{ backgroundColor: cellBg, borderColor: isTodayCell ? colors.primary : '#F7FAFC' }}
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <span className="text-[13px] font-semibold text-[#4A5568]">{format(date, 'd')}</span>
-                        {record && (
-                          <span className="rounded-full bg-[#F7FAFC] px-2 py-0.5 text-[10px] text-[#718096]">
-                            {estadoConfig[record.tipo_dia]?.label || 'Registro'}
-                          </span>
-                        )}
+                return (
+                  <>
+                    {record && (
+                      <span
+                        className="inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold"
+                        style={{
+                          backgroundColor: estadoConfig[record.tipo_dia]?.bg,
+                          color: estadoConfig[record.tipo_dia]?.text,
+                        }}
+                      >
+                        {estadoConfig[record.tipo_dia]?.label || 'Registro'}
+                      </span>
+                    )}
+                    {record && Number(record.minutos_retraso || 0) > 0 && (
+                      <div className="text-[11px] font-semibold" style={{ color: colors.warning }}>
+                        {record.minutos_retraso} min
                       </div>
-                      <div className="mt-2 space-y-1">
-                        {record && (
-                          <span
-                            className="inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold"
-                            style={{ backgroundColor: estadoConfig[record.tipo_dia]?.bg, color: estadoConfig[record.tipo_dia]?.text }}
-                          >
-                            {estadoConfig[record.tipo_dia]?.label || 'Registro'}
-                          </span>
-                        )}
-                        {record && Number(record.minutos_retraso || 0) > 0 && (
-                          <div className="text-[11px] font-semibold" style={{ color: colors.warning }}>
-                            {record.minutos_retraso} min
-                          </div>
-                        )}
-                        {!selectedEmpleadoId && count > 0 && (
-                          <div className="text-[12px] font-semibold text-[#376644]">✓ {count}</div>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-              {allDays.filter(Boolean).length === 0 && renderEmptyState()}
-            </div>
+                    )}
+                    {!selectedEmpleadoId && count > 0 && (
+                      <div className="text-[12px] font-semibold text-[#376644]">✓ {count}</div>
+                    )}
+                  </>
+                );
+              }}
+            />
           )}
         </div>
       )}

@@ -1,11 +1,11 @@
 import { useMemo, useState } from 'react';
 import { X, CalendarPlus, AlertTriangle, Info, LoaderCircle } from 'lucide-react';
 import SelectField from '../../components/common/SelectField';
-import { useEmpleados } from '../../hooks/useAsistencia';
 import {
   useCalculoHorasHabiles,
   useSaldoGestion,
   useCrearSolicitud,
+  useEmpleadosTodos,
   mensajeDeError,
 } from '../../hooks/useVacaciones';
 import { nombreEmpleado, TIPO_VACACION_LABEL } from '../../lib/calendarioVacaciones';
@@ -32,6 +32,14 @@ const MOTIVO_LABEL = {
   descanso: 'Día de descanso',
   feriado: 'Feriado',
   sin_horario: 'Sin horario asignado',
+};
+
+// El selector trae el padron completo, asi que se marca todo lo que no sea
+// 'activo' para que quien carga la solicitud lo vea antes de elegir.
+const ESTADO_EMPLEADO_LABEL = {
+  baja: 'dado de baja',
+  suspendido: 'suspendido',
+  por_habilitar: 'por habilitar',
 };
 
 // El backend devuelve los decimales como string ("40.0"); Number() los normaliza
@@ -80,7 +88,9 @@ const NuevaSolicitudModal = ({ onClose }) => {
   // de la gestion donde empieza.
   const gestion = fechaInicio ? Number(fechaInicio.slice(0, 4)) : null;
 
-  const empleadosQuery = useEmpleados();
+  // Padron completo, incluidos los dados de baja: el selector debe poder elegir
+  // a cualquier empleado (ver useEmpleadosTodos).
+  const empleadosQuery = useEmpleadosTodos();
   const calculoQuery = useCalculoHorasHabiles(idEmpleado, fechaInicio, fechaFin);
   const saldoQuery = useSaldoGestion(idEmpleado, gestion);
   const crearMutation = useCrearSolicitud();
@@ -188,6 +198,9 @@ const NuevaSolicitudModal = ({ onClose }) => {
               {empleados.map((empleado) => (
                 <option key={empleado.id} value={empleado.id}>
                   {nombreEmpleado(empleado)}
+                  {empleado.estado && empleado.estado !== 'activo'
+                    ? ` — ${ESTADO_EMPLEADO_LABEL[empleado.estado] || empleado.estado}`
+                    : ''}
                 </option>
               ))}
             </SelectField>

@@ -4,7 +4,9 @@ const API_PREFIX = '/api/v1';
 
 export const getEmpleados = async (params = {}) => {
   try {
-    const { page, skip, limit, estado, id_departamento, id_cargo, area, search } = params;
+    const {
+      page, skip, limit, estado, id_departamento, id_cargo, area, search, incluir_baja,
+    } = params;
 
     const queryParams = {
       skip: typeof skip === 'number' ? skip : Math.max((Number(page) || 1) - 1, 0) * (Number(limit) || 10),
@@ -13,6 +15,13 @@ export const getEmpleados = async (params = {}) => {
 
     if (estado) {
       queryParams.estado = estado;
+    }
+
+    // Sin este flag el backend excluye a los empleados en estado 'baja' aunque no
+    // se filtre por estado (ver get_all_empleados en el servicio). Solo se manda
+    // cuando se pide explicitamente, para no cambiar lo que ven las otras pantallas.
+    if (incluir_baja) {
+      queryParams.incluir_baja = true;
     }
 
     if (id_departamento) {

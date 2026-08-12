@@ -12,6 +12,7 @@ import {
 } from '../api/vacaciones';
 import { getJustificaciones, getJustificacionesPendientes, aprobarJustificacion } from '../api/justificaciones';
 import { getFeriados } from '../api/feriados';
+import { getEmpleados } from '../api/empleados';
 import { ventanaAmpliada } from '../lib/calendarioVacaciones';
 
 const FIVE_MINUTES = 1000 * 60 * 5;
@@ -167,6 +168,23 @@ export const useAprobarJustificacion = () => {
 // ---------------------------------------------------------------------------
 // Formulario de nueva solicitud
 // ---------------------------------------------------------------------------
+
+// Padron COMPLETO, incluidos los empleados dados de baja.
+//
+// El useEmpleados() de hooks/useAsistencia NO sirve para este selector: no manda
+// `estado`, y en ese caso get_all_empleados excluye los 'baja' por su cuenta
+// (`elif not incluir_baja`). Devuelve activo/por_habilitar/suspendido, pero no
+// el padron entero.
+//
+// Se necesita completo porque una vacacion pendiente se puede liquidar despues
+// de la baja (finiquito). Va en un hook aparte, con su propia query key, para no
+// cambiar lo que ven las demas pantallas que comparten ['empleados'].
+export const useEmpleadosTodos = () =>
+  useQuery({
+    queryKey: ['empleados', 'incluye-baja'],
+    queryFn: () => getEmpleados({ limit: 500, incluir_baja: true }),
+    staleTime: FIVE_MINUTES,
+  });
 
 // Costo real del rango, para mostrarlo antes de enviar la solicitud.
 // La query key incluye las 3 entradas, asi que react-query refetchea solo

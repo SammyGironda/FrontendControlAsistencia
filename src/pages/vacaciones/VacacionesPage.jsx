@@ -7,6 +7,7 @@ import {
   Palmtree,
   Plane,
   Sun,
+  Plus,
 } from 'lucide-react';
 import { useEmpleados } from '../../hooks/useAsistencia';
 import {
@@ -24,6 +25,7 @@ import {
   nombreEmpleado,
 } from '../../lib/calendarioVacaciones';
 import SolicitudesPendientes from './SolicitudesPendientes';
+import NuevaSolicitudModal from './NuevaSolicitudModal';
 
 const MONTHS = [
   'Enero',
@@ -73,6 +75,7 @@ const VacacionesPage = () => {
   const [mesSeleccionado, setMesSeleccionado] = useState(String(new Date().getMonth() + 1));
   const [anioSeleccionado, setAnioSeleccionado] = useState(String(new Date().getFullYear()));
   const [empleadoSeleccionado, setEmpleadoSeleccionado] = useState('all');
+  const [modalAbierto, setModalAbierto] = useState(false);
 
   const selectedEmpleadoId = empleadoSeleccionado === 'all' ? null : Number(empleadoSeleccionado);
 
@@ -223,7 +226,19 @@ const VacacionesPage = () => {
           </p>
         </div>
 
-        <div className="flex overflow-hidden rounded-[8px] border border-[#E2E8F0]">
+        {/* El boton va fuera de la card de filtros a proposito: esa card solo se
+            renderiza en la vista de calendario y aqui queda visible en las dos. */}
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setModalAbierto(true)}
+            className="inline-flex h-10 items-center gap-2 rounded-[8px] bg-[#03178C] px-4 text-[13px] font-semibold text-white transition hover:bg-[#021164]"
+          >
+            <Plus className="h-4 w-4" />
+            Nueva solicitud
+          </button>
+
+          <div className="flex overflow-hidden rounded-[8px] border border-[#E2E8F0]">
           <button
             type="button"
             onClick={() => setVistaActual('calendario')}
@@ -248,6 +263,7 @@ const VacacionesPage = () => {
             <ListChecks className="h-4 w-4" />
             Pendientes
           </button>
+          </div>
         </div>
       </div>
 
@@ -381,6 +397,10 @@ const VacacionesPage = () => {
           />
         </div>
       )}
+
+      {/* Se monta solo cuando esta abierto: al cerrarlo React lo desmonta y el
+          formulario se reinicia solo, sin useEffect de limpieza. */}
+      {modalAbierto && <NuevaSolicitudModal onClose={() => setModalAbierto(false)} />}
     </div>
   );
 };

@@ -1,6 +1,15 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import { getVacaciones, getDetalles, getDetallesPendientes, cambiarEstadoDetalle } from '../api/vacaciones';
+import {
+  getVacaciones,
+  getDetalles,
+  getDetallesPendientes,
+  cambiarEstadoDetalle,
+  getVacacionPorGestion,
+  calcularHorasHabiles,
+  asegurarGestion,
+  crearDetalle,
+} from '../api/vacaciones';
 import { getJustificaciones, getJustificacionesPendientes, aprobarJustificacion } from '../api/justificaciones';
 import { getFeriados } from '../api/feriados';
 import { ventanaAmpliada } from '../lib/calendarioVacaciones';
@@ -21,8 +30,16 @@ export const mensajeDeError = (error, porDefecto = 'Ocurrió un error inesperado
       : 'Tu rol no tiene permiso para realizar esta acción.';
   }
 
-  if (status === 400 && typeof detail === 'string' && detail.toLowerCase().includes('empleado')) {
-    return `${detail} Tu usuario no está vinculado a un empleado: RRHH debe vincularlo para que puedas aprobar solicitudes.`;
+  // Match sobre la frase exacta que emite el backend (core/deps.py y
+  // vacaciones/services.py), no sobre la palabra 'empleado' suelta: hay otros
+  // 400 que la mencionan ("El empleado N no tiene horario asignado...") y no
+  // tienen nada que ver con la vinculacion de la cuenta.
+  if (
+    status === 400 &&
+    typeof detail === 'string' &&
+    detail.toLowerCase().includes('vinculado a un empleado')
+  ) {
+    return `${detail} RRHH debe vincular tu usuario a un empleado para que puedas realizar esta acción.`;
   }
 
   if (typeof detail === 'string' && detail) return detail;
@@ -143,6 +160,71 @@ export const useAprobarJustificacion = () => {
     },
     onError: (error) => {
       toast.error(mensajeDeError(error, 'No se pudo actualizar la justificación'));
+    },
+  });
+};
+
+// ---------------------------------------------------------------------------
+// Formulario de nueva solicitud
+// ---------------------------------------------------------------------------
+
+// Costo real del rango, para mostrarlo antes de enviar la solicitud.
+// La query key incluye las 3 entradas, asi que react-query refetchea solo
+// cuando cambia alguna: no hace falta debounce ni un boton de "calcular".
+export const useCalculoHorasHabiles = (idEmpleado, fechaInicio, fechaFin) => {
+  const rangoValido = Boolean(fechaInicio && fechaFin && fechaFin >= fechaInicio);
+
+  return useQuery({
+    queryKey: ['vacaciones', 'horas-habiles', idEmpleado, fechaInicio, fechaFin],
+    queryFn: () =>
+      calcularHorasHabiles({
+        id_empleado: idEmpleado,
+        fecha_inicio: fechaInicio,
+        fecha_fin: fechaFin,
+      }),
+    enabled: Boolean(idEmpleado) && rangoValido,
+    staleTime: FIVE_MINUTES,
+    // El 400 de "sin horario asignado" es una respuesta definitiva sobre los
+    // datos, no un fallo transitorio: reintentarlo solo demora el mensaje.
+    retry: false,
+  });
+};
+
+// Saldo del empleado para esa gestion. Devuelve null si todavia no existe: el
+// formulario lo trata como "se creara al enviar", no como un error.
+// Es una lectura pura, no crea nada (eso lo hace asegurarGestion al enviar).
+export const useSaldoGestion = (idEmpleado, gestion) =>
+  useQuery({
+    queryKey: ['vacaciones', 'saldo', idEmpleado, gestion],
+    queryFn: () => getVacacionPorGestion(idEmpleado, gestion),
+    enabled: Boolean(idEmpleado && gestion),
+    staleTime: FIVE_MINUTES,
+  });
+
+// Crea la solicitud en estado 'solicitado'.
+//
+// Son dos llamadas encadenadas dentro de UNA mutationFn: primero se asegura el
+// registro de vacacion de la gestion (idempotente) porque crearDetalle exige un
+// id_vacacion, y recien despues se crea el detalle. Van juntas para que un fallo
+// del segundo paso llegue por el mismo onError y el usuario no quede sin saber
+// que paso.
+//
+// argumentos: { idEmpleado, gestion, detalle }
+//   detalle: { fecha_inicio, fecha_fin, horas_habiles, tipo_vacacion, observacion? }
+export const useCrearSolicitud = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ idEmpleado, gestion, detalle }) => {
+      const vacacion = await asegurarGestion({ id_empleado: idEmpleado, gestion });
+      return crearDetalle(vacacion.id, detalle);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['vacaciones'] });
+      toast.success('Solicitud registrada. Queda pendiente de aprobación.');
+    },
+    onError: (error) => {
+      toast.error(mensajeDeError(error, 'No se pudo registrar la solicitud'));
     },
   });
 };

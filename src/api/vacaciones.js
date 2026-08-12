@@ -193,3 +193,38 @@ export const eliminarDetalle = async (id) => {
   const response = await client.delete(`${API_PREFIX}/vacaciones/detalles/${id}`);
   return response.status === 204 ? null : response.data;
 };
+
+// ===== APOYO AL FORMULARIO DE SOLICITUD =====
+
+// params: { id_empleado, fecha_inicio, fecha_fin } (fechas 'YYYY-MM-DD')
+//
+// Devuelve el costo real del rango ANTES de crear la solicitud:
+//   { dias_calendario, dias_habiles, horas_por_jornada, horario_uniforme,
+//     horas_habiles, dias_excluidos: [{ fecha, motivo, etiqueta }] }
+//
+// `motivo` es 'descanso' | 'feriado' | 'sin_horario'. `horas_habiles` es
+// exactamente lo que hay que mandar despues en crearDetalle.
+//
+// horas_habiles puede ser "0.0" (rango de puro fin de semana): NO es un error,
+// pero el backend rechaza crear un detalle con 0 porque el schema exige gt=0.
+//
+// Devuelve 400 si el empleado no tiene NINGUN horario asignado en el rango.
+export const calcularHorasHabiles = async (params) => {
+  const response = await client.get(
+    `${API_PREFIX}/vacaciones/calcular-horas-habiles`,
+    { params }
+  );
+  return response.data;
+};
+
+// data: { id_empleado, gestion }
+//
+// Devuelve el registro de vacacion de esa gestion, creandolo con la base LGT si
+// no existe. Es idempotente: llamarlo dos veces no duplica ni suma saldos.
+//
+// Hace falta porque crearDetalle exige un id_vacacion y casi ningun empleado
+// tiene todavia su registro de saldo.
+export const asegurarGestion = async (data) => {
+  const response = await client.post(`${API_PREFIX}/vacaciones/asegurar-gestion`, data);
+  return response.data;
+};

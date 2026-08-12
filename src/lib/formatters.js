@@ -41,6 +41,17 @@ export const calcularAntiguedad = (fechaIngreso) => {
   return result || 'Menos de un mes';
 };
 
+// Las columnas NUMERIC/Decimal del backend (horas, saldos vacacionales) viajan
+// como STRING en el JSON: "8.0", no 8. Sumarlas sin castear concatena texto.
+// Devuelve 0 ante null/undefined/'' o cualquier cosa no numerica.
+export const aNumero = (valor) => {
+  const n = Number(valor);
+  return Number.isFinite(n) ? n : 0;
+};
+
+// "8.0 h" — una sola decimal, que es la precision real de la columna (4,1).
+export const formatearHoras = (valor) => `${aNumero(valor).toFixed(1)} h`;
+
 export const horasADias = (horas) => {
   if (typeof horas !== 'number') return 0;
   return parseFloat((horas / 8).toFixed(1));

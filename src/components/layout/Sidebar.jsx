@@ -1,11 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import {
   LayoutDashboard, Users, Upload, CalendarCheck,
   FileText, Settings, ClipboardList, LogOut, AlertCircle, FileSignature,
-  SlidersHorizontal, Shield, CalendarX, ChevronDown, Palmtree
+  SlidersHorizontal, Shield, CalendarX, ChevronDown, Palmtree, Clock
 } from 'lucide-react';
 import useAuthStore from '../../store/authStore';
+import { esGestor } from '../../lib/permisos';
 import { getIncidenciasPendientes } from '../../api/marcaciones';
 
 const navItems = [
@@ -21,7 +22,17 @@ const navItems = [
     ]
   },
   { name: 'Asistencia y Cálculos', icon: CalendarCheck, path: '/asistencia' },
-  { name: 'Vacaciones', icon: Palmtree, path: '/vacaciones' },
+  {
+    name: 'Vacaciones',
+    icon: Palmtree,
+    path: '/vacaciones',
+    subItems: [
+      // Las compensaciones alimentan el saldo vacacional, por eso cuelgan de
+      // aca. La ruta comparte prefijo con /vacaciones para que isItemActive
+      // (que usa startsWith) mantenga resaltado al padre.
+      { name: 'Compensaciones', icon: Clock, path: '/vacaciones/compensaciones', soloGestores: true }
+    ]
+  },
   { name: 'Reportes', icon: FileText, path: '/reportes' },
   {
     name: 'Configuración',
@@ -40,6 +51,32 @@ const Sidebar = () => {
   const location = useLocation();
   const [incidenciasCount, setIncidenciasCount] = useState(0);
   const [configExpanded, setConfigExpanded] = useState(() => location.pathname.startsWith('/configuracion'));
+
+  // Sub-items reservados a admin/rrhh. Ocultarlos es COSMETICO: el guard real
+  // esta en el backend (require_admin / require_roles). Sirve para no ofrecer
+  // una pantalla que respondera 403.
+  //
+  // Cuando no queda ningun sub-item visible hay que borrar la clave, no dejar
+  // un array vacio: el render hace `{item.subItems && (<ul>...)}`, asi que un
+  // array vacio pinta un <ul> con padding, y ademas apaga el punto dorado del
+  // item activo, que depende de `!item.subItems`.
+  const puedeVerCompensaciones = esGestor(user);
+
+  const itemsVisibles = useMemo(
+    () =>
+      navItems.map((item) => {
+        if (!item.subItems) return item;
+
+        const subItems = item.subItems.filter(
+          (sub) => !sub.soloGestores || puedeVerCompensaciones
+        );
+
+        return subItems.length > 0
+          ? { ...item, subItems }
+          : { ...item, subItems: undefined };
+      }),
+    [puedeVerCompensaciones]
+  );
 
   useEffect(() => {
     if (location.pathname.startsWith('/configuracion')) {
@@ -105,7 +142,7 @@ const Sidebar = () => {
           Módulos
         </p>
         <ul className="space-y-1 px-3">
-          {navItems.map((item) => {
+          {itemsVisibles.map((item) => {
             const isActive = isItemActive(item.path);
             const hasSubItems = item.subItems && item.subItems.length > 0;
             const isConfigItem = item.path === '/configuracion' && hasSubItems;

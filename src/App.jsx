@@ -16,6 +16,7 @@ import Roles from './pages/configuracion/Roles';
 import Feriados from './pages/configuracion/Feriados';
 import Contratos from './pages/contratos/Contratos';
 import VacacionesPage from './pages/vacaciones/VacacionesPage';
+import CompensacionesPage from './pages/compensaciones/CompensacionesPage';
 import { login, getCurrentUser } from './api/auth';
 import useAuthStore from './store/authStore';
 
@@ -149,6 +150,7 @@ function App() {
           <Route path="/marcaciones/incidencias" element={<ResolucionIncidencias />} />
           <Route path="/asistencia" element={<AsistenciaPage />} />
           <Route path="/vacaciones" element={<VacacionesPage />} />
+          <Route path="/vacaciones/compensaciones" element={<CompensacionesPage />} />
           <Route path="/reportes" element={<ReportesPage />} />
           <Route path="/configuracion" element={<Configuracion />} />
           <Route path="/configuracion/roles" element={<Roles />} />

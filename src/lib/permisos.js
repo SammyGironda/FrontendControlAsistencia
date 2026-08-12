@@ -10,3 +10,13 @@
 // La comparacion es case-insensitive igual que app/core/deps.py:134.
 
 export const esAdmin = (user) => (user?.nombre_rol || '').toLowerCase() === 'admin';
+
+// admin + rrhh. Espeja ROLES_GESTORES de app/core/deps.py, el conjunto que el
+// backend usa para "puede gestionar registros de cualquier empleado".
+//
+// Ojo al usarlo: esGestor NO implica esAdmin. Hay endpoints donde rrhh lee pero
+// no escribe (GET vs POST de /compensaciones-horas-extra), asi que la pantalla
+// tiene que preguntar por el permiso que corresponde a cada accion, no por uno
+// solo.
+export const esGestor = (user) =>
+  ['admin', 'rrhh'].includes((user?.nombre_rol || '').toLowerCase());

@@ -3,6 +3,9 @@ import { AlertCircle, Check, Clock, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'react-hot-toast';
 import { getHorarios, getAsignacionHorario, crearAsignacion, finalizarAsignacion } from '../../api/horarios';
+import useAuthStore from '../../store/authStore';
+import { esAdmin } from '../../lib/permisos';
+import HorarioPersonalizadoSection from './HorarioPersonalizadoSection';
 
 const diaLabel = (dia) => {
   const labels = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
@@ -24,6 +27,11 @@ const AsignarHorarioDrawer = ({ empleado, isOpen, onClose, onAsignacionExitosa }
   const [finalizarActual, setFinalizarActual] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // El override de horario solo lo puede editar un admin (require_admin en el
+  // PUT y el DELETE). Ocultarlo es cosmetico; el guard real esta en el backend.
+  const user = useAuthStore((state) => state.user);
+  const puedeEditarOverride = esAdmin(user);
 
   const selectedHorario = useMemo(
     () => horarios.find((item) => item.id === selectedHorarioId) || null,
@@ -109,7 +117,7 @@ const AsignarHorarioDrawer = ({ empleado, isOpen, onClose, onAsignacionExitosa }
       <div className="fixed inset-y-0 right-0 z-50 flex w-full max-w-[480px] flex-col bg-white shadow-2xl transition-transform duration-300">
         <div className="border-b border-gray-200 px-6 py-5 flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-bold text-slate-900">Asignar Horario</h2>
+            <h2 className="text-lg font-bold text-slate-900">Horario del empleado</h2>
             <p className="mt-1 text-sm text-primary">{empleado?.nombre} {empleado?.apellidos}</p>
           </div>
           <button type="button" onClick={onClose} className="text-slate-500 hover:text-slate-700">
@@ -119,7 +127,7 @@ const AsignarHorarioDrawer = ({ empleado, isOpen, onClose, onAsignacionExitosa }
 
         <div className="flex-1 overflow-y-auto">
           <div className="border-b border-gray-200 px-6 py-5">
-            <h3 className="text-sm font-semibold text-slate-900 mb-3">Horario Actual</h3>
+            <h3 className="text-sm font-semibold text-slate-900 mb-3">Horario general vigente</h3>
             <div className="rounded-xl bg-slate-50 p-4">
               {isLoading ? (
                 <div className="text-sm text-slate-500">Cargando horario actual...</div>
@@ -155,6 +163,14 @@ const AsignarHorarioDrawer = ({ empleado, isOpen, onClose, onAsignacionExitosa }
               )}
             </div>
           </div>
+
+          {puedeEditarOverride && empleado?.id ? (
+            <div className="border-b border-gray-200 px-6 py-5">
+              {/* key por empleado: al cambiar de empleado React desmonta el
+                  formulario y su estado se reinicia solo, sin useEffect. */}
+              <HorarioPersonalizadoSection key={empleado.id} empleadoId={empleado.id} />
+            </div>
+          ) : null}
 
           <div className="px-6 py-5">
             <h3 className="text-sm font-semibold text-slate-900 mb-4">Asignar nuevo turno</h3>

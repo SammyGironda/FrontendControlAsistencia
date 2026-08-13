@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation, Link } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   LayoutDashboard, Users, Upload, CalendarCheck,
   FileText, Settings, ClipboardList, LogOut, AlertCircle, FileSignature,
@@ -47,8 +48,9 @@ const navItems = [
 ];
 
 const Sidebar = () => {
-  const { user } = useAuthStore();
+  const { user, logout } = useAuthStore();
   const location = useLocation();
+  const queryClient = useQueryClient();
   const [incidenciasCount, setIncidenciasCount] = useState(0);
   const [configExpanded, setConfigExpanded] = useState(() => location.pathname.startsWith('/configuracion'));
 
@@ -106,6 +108,19 @@ const Sidebar = () => {
     return () => clearInterval(interval);
   }, [location.pathname]);
 
+
+  // No hace falta navegar a mano: al apagar isAuthenticated, PrivateRoute
+  // redirige solo a /login (todas las rutas menos /login cuelgan de el).
+  //
+  // Se limpia la cache de React Query porque esto es navegacion SPA, sin
+  // recarga de pagina — a diferencia del interceptor de 401 de api/client.js,
+  // que hace window.location.href. Sin este clear(), el staleTime de 5 min
+  // dejaria los datos del usuario anterior visibles para el siguiente que
+  // inicie sesion en la misma pestana.
+  const handleLogout = () => {
+    queryClient.clear();
+    logout();
+  };
 
   const getInitials = (name) => {
     if (!name) return 'U';
@@ -244,7 +259,13 @@ const Sidebar = () => {
               <p className="text-white/60 text-xs">{user ? user.nombre_rol : 'Rol'}</p>
             </div>
           </div>
-          <button className="flex-shrink-0 text-white/50 hover:text-white transition-colors">
+          <button
+            type="button"
+            onClick={handleLogout}
+            title="Cerrar sesión"
+            aria-label="Cerrar sesión"
+            className="flex-shrink-0 text-white/50 hover:text-white transition-colors"
+          >
             <LogOut className="w-4 h-4" />
           </button>
         </div>

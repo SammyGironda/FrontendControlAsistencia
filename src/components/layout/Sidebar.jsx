@@ -41,7 +41,9 @@ const navItems = [
     path: '/configuracion',
     subItems: [
       { name: 'Reglas y Turnos', icon: SlidersHorizontal, path: '/configuracion' },
-      { name: 'Roles del Sistema', icon: Shield, path: '/configuracion/roles' },
+      // Desde el 2026-08-13 GET /api/v1/roles/ exige admin o rrhh: sin este flag
+      // la pantalla se ofrece a todos y responde 403 al cargar.
+      { name: 'Roles del Sistema', icon: Shield, path: '/configuracion/roles', soloGestores: true },
       { name: 'Feriados', icon: CalendarX, path: '/configuracion/feriados' }
     ]
   },

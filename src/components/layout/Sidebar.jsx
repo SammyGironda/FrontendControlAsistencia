@@ -4,7 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import {
   LayoutDashboard, Users, Upload, CalendarCheck,
   FileText, Settings, ClipboardList, LogOut, AlertCircle, FileSignature,
-  SlidersHorizontal, Shield, CalendarX, ChevronDown, Palmtree, Clock
+  SlidersHorizontal, Shield, CalendarX, ChevronDown, Palmtree, Clock, UserCog
 } from 'lucide-react';
 import useAuthStore from '../../store/authStore';
 import { esGestor } from '../../lib/permisos';
@@ -44,6 +44,11 @@ const navItems = [
       // Desde el 2026-08-13 GET /api/v1/roles/ exige admin o rrhh: sin este flag
       // la pantalla se ofrece a todos y responde 403 al cargar.
       { name: 'Roles del Sistema', icon: Shield, path: '/configuracion/roles', soloGestores: true },
+      // GET /api/v1/usuarios/ es admin+rrhh (rrhh consulta el padron), asi que
+      // el flag correcto es soloGestores y no uno de solo-admin. Dentro de la
+      // pantalla, crear cuentas y resetear contrasenas se oculta a rrhh aparte:
+      // esos endpoints si son admin.
+      { name: 'Usuarios del Sistema', icon: UserCog, path: '/configuracion/usuarios', soloGestores: true },
       { name: 'Feriados', icon: CalendarX, path: '/configuracion/feriados' }
     ]
   },

@@ -4,6 +4,7 @@ import { LoaderCircle, AlertTriangle } from 'lucide-react';
 import PrivateRoute from './components/common/PrivateRoute';
 import MainLayout from './components/layout/MainLayout';
 import Login from './pages/auth/Login';
+import CambiarPasswordObligatorio from './pages/auth/CambiarPasswordObligatorio';
 import Dashboard from './pages/dashboard/Dashboard';
 import EmpleadosListado from './pages/empleados/EmpleadosListado';
 import EmpleadoForm from './pages/empleados/EmpleadoForm';
@@ -13,6 +14,7 @@ import AsistenciaPage from './pages/asistencia/AsistenciaPage';
 import ReportesPage from './pages/reportes/ReportesPage';
 import Configuracion from './pages/configuracion/Configuracion';
 import Roles from './pages/configuracion/Roles';
+import Usuarios from './pages/configuracion/Usuarios';
 import Feriados from './pages/configuracion/Feriados';
 import Contratos from './pages/contratos/Contratos';
 import VacacionesPage from './pages/vacaciones/VacacionesPage';
@@ -139,6 +141,12 @@ function App() {
       <Route path="/login" element={<Login />} />
 
       <Route element={<PrivateRoute />}>
+        {/* Fuera de MainLayout a propósito: sin barra lateral no hay forma de
+            navegar a otra pantalla, que es justo lo que se busca mientras la
+            contraseña siga siendo temporal. PrivateRoute redirige acá y, una vez
+            cambiada, deja de permitir el acceso a esta ruta. */}
+        <Route path="/cambiar-password" element={<CambiarPasswordObligatorio />} />
+
         <Route element={<MainLayout />}>
           <Route index element={<Dashboard />} />
           <Route path="/empleados" element={<EmpleadosListado />} />
@@ -154,6 +162,7 @@ function App() {
           <Route path="/reportes" element={<ReportesPage />} />
           <Route path="/configuracion" element={<Configuracion />} />
           <Route path="/configuracion/roles" element={<Roles />} />
+          <Route path="/configuracion/usuarios" element={<Usuarios />} />
           <Route path="/configuracion/feriados" element={<Feriados />} />
           {/* Add more private routes here */}
         </Route>

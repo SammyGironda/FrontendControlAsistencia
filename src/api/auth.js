@@ -28,3 +28,22 @@ export const getCurrentUser = async () => {
   const response = await client.get('/api/v1/auth/me');
   return response.data;
 };
+
+// El propio usuario reemplaza su contraseña temporal. Opera siempre sobre la
+// cuenta del token: no lleva id en la URL, así que no hay forma de apuntarlo a
+// otra cuenta.
+//
+// Al confirmar, el backend baja `requiere_cambio_password`. Quien llame a esto
+// debe refrescar el usuario del store (getCurrentUser) para que el guard de
+// PrivateRoute deje de redirigir a la pantalla de cambio obligatorio.
+//
+// Errores esperables: 400 si la contraseña actual es incorrecta o si la nueva
+// es igual a la actual, y 422 si la nueva no cumple la política (mínimo 8
+// caracteres, con mayúscula, minúscula y dígito).
+export const cambiarPasswordObligatorio = async (passwordActual, passwordNueva) => {
+  const response = await client.post('/api/v1/auth/cambiar-password-obligatorio', {
+    password_actual: passwordActual,
+    password_nueva: passwordNueva,
+  });
+  return response.data;
+};

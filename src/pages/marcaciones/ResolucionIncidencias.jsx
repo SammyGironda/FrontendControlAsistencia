@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { AlertCircle, CheckCircle, XCircle, Search, Paperclip, LogIn, LogOut } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import Header from '../../components/layout/Header';
@@ -60,6 +61,7 @@ const ResolucionIncidencias = () => {
   const [observacion, setObservacion] = useState('');
   const [resolutionDetails, setResolutionDetails] = useState({ hora: '', tipo: 'ENTRADA' });
   const { user } = useAuthStore();
+  const queryClient = useQueryClient();
 
   const normalizeEstado = (estado) => {
     if (!estado) return 'pendiente';
@@ -151,6 +153,9 @@ const ResolucionIncidencias = () => {
         id_resuelto_por: user?.id ?? 1,
       });
       await fetchIncidencias();
+      // Esta pantalla mantiene su propio estado, pero el badge del Sidebar lee
+      // el conteo desde React Query: sin esto tardaria hasta un minuto en bajar.
+      queryClient.invalidateQueries({ queryKey: ['incidencias'] });
     } catch (err) {
       toast.error(err?.response?.data?.detail || 'No se pudo procesar la incidencia.');
     }
@@ -175,6 +180,7 @@ const ResolucionIncidencias = () => {
     try {
       await resolverIncidencia(selectedIncidencia.id, payload);
       await fetchIncidencias();
+      queryClient.invalidateQueries({ queryKey: ['incidencias'] });
       closePanel();
     } catch (err) {
       toast.error(err?.response?.data?.detail || 'No se pudo procesar la incidencia.');

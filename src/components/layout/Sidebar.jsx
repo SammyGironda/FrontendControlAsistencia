@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import useAuthStore from '../../store/authStore';
 import { esGestor } from '../../lib/permisos';
-import { getIncidenciasPendientes } from '../../api/marcaciones';
+import { useIncidenciasPendientes } from '../../hooks/useMarcaciones';
 
 const navItems = [
   { name: 'Dashboard', icon: LayoutDashboard, path: '/' },
@@ -58,8 +58,14 @@ const Sidebar = () => {
   const { user, logout } = useAuthStore();
   const location = useLocation();
   const queryClient = useQueryClient();
-  const [incidenciasCount, setIncidenciasCount] = useState(0);
   const [configExpanded, setConfigExpanded] = useState(() => location.pathname.startsWith('/configuracion'));
+
+  // El conteo NO depende de la ruta: el Sidebar se monta una sola vez (es un
+  // layout route en App.jsx) y la query se refresca sola cada minuto. Antes
+  // vivia en el useEffect de abajo, que al depender de location.pathname
+  // rearmaba el intervalo y repedia el conteo en cada navegacion.
+  const { data: incidencias = [] } = useIncidenciasPendientes();
+  const incidenciasCount = incidencias.length;
 
   // Sub-items reservados a admin/rrhh. Ocultarlos es COSMETICO: el guard real
   // esta en el backend (require_admin / require_roles). Sirve para no ofrecer
@@ -87,32 +93,12 @@ const Sidebar = () => {
     [puedeVerCompensaciones]
   );
 
+  // Depende de la ruta a proposito, y es lo unico que deberia: al entrar a
+  // cualquier pantalla de /configuracion el submenu queda desplegado.
   useEffect(() => {
     if (location.pathname.startsWith('/configuracion')) {
       setConfigExpanded(true);
     }
-
-    const fetchIncidencias = async () => {
-      try {
-        // TODO: Cuando la API soporte filtros, pasar { estado: 'pendiente' }
-        const response = await getIncidenciasPendientes();
-        const items = Array.isArray(response)
-          ? response
-          : Array.isArray(response.items)
-          ? response.items
-          : Array.isArray(response.value)
-          ? response.value
-          : [];
-        setIncidenciasCount(items.length);
-      } catch (error) {
-        console.error("Error fetching incidencias:", error);
-      }
-    };
-
-    fetchIncidencias();
-    const interval = setInterval(fetchIncidencias, 60000); // Actualizar cada minuto
-
-    return () => clearInterval(interval);
   }, [location.pathname]);
 
 

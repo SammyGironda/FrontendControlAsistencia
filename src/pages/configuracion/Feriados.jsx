@@ -11,7 +11,7 @@ import {
   RefreshCcw,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import Header from '../../components/layout/Header';
+import PageHeader from '../../components/layout/PageHeader';
 import { formatFecha } from '../../lib/formatters';
 import {
   crearFeriado,
@@ -249,10 +249,13 @@ const Feriados = () => {
   };
 
   return (
-    <div className="space-y-6 pb-16">
-      <Header title="Feriados" subtitle="Calendario y administración de feriados nacionales y departamentales" />
+    <div className="p-6 pb-16">
+      <PageHeader
+        title="Feriados"
+        subtitle="Calendario y administración de feriados nacionales y departamentales"
+      />
 
-      <div className="space-y-6 px-4 sm:px-6 lg:px-8">
+      <div className="space-y-6">
         <section className="grid gap-4 xl:grid-cols-[1.3fr_0.7fr]">
           <div className="space-y-4">
             <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">

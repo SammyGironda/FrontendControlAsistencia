@@ -26,6 +26,7 @@ import {
 } from '../../lib/calendarioVacaciones';
 import SolicitudesPendientes from './SolicitudesPendientes';
 import NuevaSolicitudModal from './NuevaSolicitudModal';
+import PageHeader from '../../components/layout/PageHeader';
 
 const MONTHS = [
   'Enero',
@@ -215,57 +216,55 @@ const VacacionesPage = () => {
 
   return (
     <div className="space-y-5 p-6">
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-[22px] font-semibold text-[#1A202C]">Vacaciones y Ausencias</h1>
-          <p className="mt-1 text-[13px] text-[#718096]">
-            {monthLabel} {anioSeleccionado} ·{' '}
-            {selectedEmpleadoId
-              ? nombreEmpleado(empleadosPorId.get(selectedEmpleadoId))
-              : 'Todos los empleados'}
-          </p>
-        </div>
+      <PageHeader
+        title="Vacaciones y Ausencias"
+        subtitle={`${monthLabel} ${anioSeleccionado} · ${
+          selectedEmpleadoId
+            ? nombreEmpleado(empleadosPorId.get(selectedEmpleadoId))
+            : 'Todos los empleados'
+        }`}
+        actions={
+          /* El boton va fuera de la card de filtros a proposito: esa card solo se
+             renderiza en la vista de calendario y aqui queda visible en las dos. */
+          <>
+            <button
+              type="button"
+              onClick={() => setModalAbierto(true)}
+              className="inline-flex h-10 items-center gap-2 rounded-[8px] bg-[#03178C] px-4 text-[13px] font-semibold text-white transition hover:bg-[#021164]"
+            >
+              <Plus className="h-4 w-4" />
+              Nueva solicitud
+            </button>
 
-        {/* El boton va fuera de la card de filtros a proposito: esa card solo se
-            renderiza en la vista de calendario y aqui queda visible en las dos. */}
-        <div className="flex flex-wrap items-center gap-3">
-          <button
-            type="button"
-            onClick={() => setModalAbierto(true)}
-            className="inline-flex h-10 items-center gap-2 rounded-[8px] bg-[#03178C] px-4 text-[13px] font-semibold text-white transition hover:bg-[#021164]"
-          >
-            <Plus className="h-4 w-4" />
-            Nueva solicitud
-          </button>
-
-          <div className="flex overflow-hidden rounded-[8px] border border-[#E2E8F0]">
-          <button
-            type="button"
-            onClick={() => setVistaActual('calendario')}
-            className={`inline-flex h-10 items-center gap-2 px-4 text-[13px] font-semibold transition ${
-              vistaActual === 'calendario'
-                ? 'bg-[#EBF4FF] text-[#03178C]'
-                : 'bg-white text-[#94a3b8] hover:bg-[#F8FAFC]'
-            }`}
-          >
-            <CalendarDays className="h-4 w-4" />
-            Calendario
-          </button>
-          <button
-            type="button"
-            onClick={() => setVistaActual('pendientes')}
-            className={`inline-flex h-10 items-center gap-2 border-l border-[#E2E8F0] px-4 text-[13px] font-semibold transition ${
-              vistaActual === 'pendientes'
-                ? 'bg-[#EBF4FF] text-[#03178C]'
-                : 'bg-white text-[#94a3b8] hover:bg-[#F8FAFC]'
-            }`}
-          >
-            <ListChecks className="h-4 w-4" />
-            Pendientes
-          </button>
-          </div>
-        </div>
-      </div>
+            <div className="flex overflow-hidden rounded-[8px] border border-[#E2E8F0]">
+              <button
+                type="button"
+                onClick={() => setVistaActual('calendario')}
+                className={`inline-flex h-10 items-center gap-2 px-4 text-[13px] font-semibold transition ${
+                  vistaActual === 'calendario'
+                    ? 'bg-[#EBF4FF] text-[#03178C]'
+                    : 'bg-white text-[#94a3b8] hover:bg-[#F8FAFC]'
+                }`}
+              >
+                <CalendarDays className="h-4 w-4" />
+                Calendario
+              </button>
+              <button
+                type="button"
+                onClick={() => setVistaActual('pendientes')}
+                className={`inline-flex h-10 items-center gap-2 border-l border-[#E2E8F0] px-4 text-[13px] font-semibold transition ${
+                  vistaActual === 'pendientes'
+                    ? 'bg-[#EBF4FF] text-[#03178C]'
+                    : 'bg-white text-[#94a3b8] hover:bg-[#F8FAFC]'
+                }`}
+              >
+                <ListChecks className="h-4 w-4" />
+                Pendientes
+              </button>
+            </div>
+          </>
+        }
+      />
 
       {vistaActual === 'calendario' && (
         <div className="rounded-[8px] border border-[#E2E8F0] bg-white px-5 py-4 shadow-sm">

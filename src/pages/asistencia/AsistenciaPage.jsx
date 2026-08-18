@@ -14,6 +14,7 @@ import { useEmpleados, useAsistenciaEmpleado, useResumenMensual } from '../../ho
 import { getAsistenciaEmpleado } from '../../api/asistencia';
 import MonthGrid from '../../components/common/MonthGrid';
 import SelectField from '../../components/common/SelectField';
+import PageHeader from '../../components/layout/PageHeader';
 
 const colors = {
   primary: '#03178C',
@@ -315,50 +316,45 @@ const AsistenciaPage = () => {
 
   return (
     <div className="space-y-6 p-6">
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div className="space-y-2">
-          <h1 className="text-[22px] font-semibold" style={{ color: colors.textDark }}>
-            Asistencia y Cálculos
-          </h1>
-          <p className="text-[14px] text-[#718096]">
-            Registro detallado · {registrosCount} registros · {monthLabel} {anioSeleccionado}
-          </p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-3">
-          <button
-            type="button"
-            className="inline-flex items-center gap-2 rounded-[8px] border border-[#E2E8F0] bg-white px-4 py-2 text-[13px] font-semibold text-[#03178C]"
-          >
-            <SlidersHorizontal className="h-4 w-4" />
-            Tolerancia: 10 min
-          </button>
-          <div className="inline-flex overflow-hidden rounded-[10px] border border-[#E2E8F0] bg-white">
+      <PageHeader
+        title="Asistencia y Cálculos"
+        subtitle={`Registro detallado · ${registrosCount} registros · ${monthLabel} ${anioSeleccionado}`}
+        actions={
+          <>
             <button
               type="button"
-              onClick={() => setVistaActual('lista')}
-              className={`inline-flex h-10 w-10 items-center justify-center border-r border-[#E2E8F0] transition ${
-                vistaActual === 'lista'
-                  ? 'bg-[#EBF4FF] text-[#03178C]'
-                  : 'bg-white text-[#94a3b8] hover:bg-[#F8FAFC]'
-              }`}
+              className="inline-flex items-center gap-2 rounded-[8px] border border-[#E2E8F0] bg-white px-4 py-2 text-[13px] font-semibold text-[#03178C]"
             >
-              <LayoutList className="h-5 w-5" />
+              <SlidersHorizontal className="h-4 w-4" />
+              Tolerancia: 10 min
             </button>
-            <button
-              type="button"
-              onClick={() => setVistaActual('calendario')}
-              className={`inline-flex h-10 w-10 items-center justify-center transition ${
-                vistaActual === 'calendario'
-                  ? 'bg-[#EBF4FF] text-[#03178C]'
-                  : 'bg-white text-[#94a3b8] hover:bg-[#F8FAFC]'
-              }`}
-            >
-              <CalendarDays className="h-5 w-5" />
-            </button>
-          </div>
-        </div>
-      </div>
+            <div className="inline-flex overflow-hidden rounded-[10px] border border-[#E2E8F0] bg-white">
+              <button
+                type="button"
+                onClick={() => setVistaActual('lista')}
+                className={`inline-flex h-10 w-10 items-center justify-center border-r border-[#E2E8F0] transition ${
+                  vistaActual === 'lista'
+                    ? 'bg-[#EBF4FF] text-[#03178C]'
+                    : 'bg-white text-[#94a3b8] hover:bg-[#F8FAFC]'
+                }`}
+              >
+                <LayoutList className="h-5 w-5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setVistaActual('calendario')}
+                className={`inline-flex h-10 w-10 items-center justify-center transition ${
+                  vistaActual === 'calendario'
+                    ? 'bg-[#EBF4FF] text-[#03178C]'
+                    : 'bg-white text-[#94a3b8] hover:bg-[#F8FAFC]'
+                }`}
+              >
+                <CalendarDays className="h-5 w-5" />
+              </button>
+            </div>
+          </>
+        }
+      />
 
       <div className="rounded-[8px] border border-[#E2E8F0] bg-white px-5 py-4 shadow-sm">
         <div className="mb-4 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">

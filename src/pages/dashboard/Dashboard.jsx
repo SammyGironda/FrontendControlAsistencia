@@ -20,6 +20,7 @@ import {
 import { Link } from 'react-router-dom';
 import dayjs from 'dayjs';
 import 'dayjs/locale/es';
+import PageHeader from '../../components/layout/PageHeader';
 import { getRetrasosPorMes, getHorasTrabajadasMes, getCumpleanosProximos } from '../../api/dashboard';
 import { getEmpleados, getHorarios } from '../../api/empleados';
 import { getIncidenciasPendientes, getArchivos } from '../../api/marcaciones';
@@ -277,15 +278,15 @@ const Dashboard = () => {
 
   return (
     <div className="p-6 bg-surface min-h-full font-sans">
-      <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-semibold text-gray-900">Panel de Control</h1>
-          <p className="text-sm text-gray-500 mt-2">Resumen — {dayjs().format('MMMM YYYY')}</p>
-        </div>
-        <div className="flex flex-wrap gap-3">
-          <span className="inline-flex items-center rounded-full bg-primary/10 text-primary px-4 py-2 text-sm font-semibold">Mes actual: {MONTH_LABELS[currentMonth - 1]} {currentYear}</span>
-        </div>
-      </div>
+      <PageHeader
+        title="Panel de Control"
+        subtitle={`Resumen — ${dayjs().format('MMMM YYYY')}`}
+        actions={
+          <span className="inline-flex items-center rounded-full bg-primary/10 text-primary px-4 py-2 text-sm font-semibold">
+            Mes actual: {MONTH_LABELS[currentMonth - 1]} {currentYear}
+          </span>
+        }
+      />
 
       <div className="grid grid-cols-1 xl:grid-cols-[65%_35%] gap-6">
         <div className="space-y-6">

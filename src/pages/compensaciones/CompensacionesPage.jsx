@@ -9,6 +9,7 @@ import { useEmpleadosTodos } from '../../hooks/useVacaciones';
 import { nombreEmpleado } from '../../lib/calendarioVacaciones';
 import { aNumero, formatearHoras, formatFecha, formatFechaHora } from '../../lib/formatters';
 import NuevaCompensacionModal from './NuevaCompensacionModal';
+import PageHeader from '../../components/layout/PageHeader';
 
 // Historial de compensaciones de horas extra + alta manual.
 //
@@ -117,27 +118,22 @@ const PanelCompensaciones = ({ puedeRegistrar }) => {
 
   return (
     <div className="space-y-5 p-6">
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-[22px] font-semibold text-[#1A202C]">
-            Compensaciones de horas extra
-          </h1>
-          <p className="mt-1 text-[13px] text-[#718096]">
-            Horas acreditadas al saldo vacacional por trabajo en fin de semana o feriado no
-            planeado
-          </p>
-        </div>
-        {puedeRegistrar && (
-          <button
-            type="button"
-            onClick={() => setModalAbierto(true)}
-            className="inline-flex h-10 items-center gap-2 rounded-[8px] bg-[#03178C] px-4 text-[13px] font-semibold text-white transition hover:bg-[#021164]"
-          >
-            <Plus className="h-4 w-4" />
-            Registrar compensación
-          </button>
-        )}
-      </div>
+      <PageHeader
+        title="Compensaciones de horas extra"
+        subtitle="Horas acreditadas al saldo vacacional por trabajo en fin de semana o feriado no planeado"
+        actions={
+          puedeRegistrar ? (
+            <button
+              type="button"
+              onClick={() => setModalAbierto(true)}
+              className="inline-flex h-10 items-center gap-2 rounded-[8px] bg-[#03178C] px-4 text-[13px] font-semibold text-white transition hover:bg-[#021164]"
+            >
+              <Plus className="h-4 w-4" />
+              Registrar compensación
+            </button>
+          ) : null
+        }
+      />
 
       {!puedeRegistrar && (
         <div className="flex items-start gap-2 rounded-[10px] border border-[#C7D2FE] bg-[#EBF4FF] p-3 text-[13px] text-[#03178C]">

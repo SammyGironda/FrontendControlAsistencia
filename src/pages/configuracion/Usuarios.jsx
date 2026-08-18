@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
-import Header from '../../components/layout/Header';
+import PageHeader from '../../components/layout/PageHeader';
 import PasswordTemporalModal from '../../components/common/PasswordTemporalModal';
 import NuevoUsuarioModal from './NuevoUsuarioModal';
 import useAuthStore from '../../store/authStore';
@@ -133,21 +133,13 @@ const Usuarios = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <Header
+    <div className="p-6">
+      <PageHeader
         title="Usuarios del Sistema"
         subtitle="Cuentas de acceso, niveles de permiso y contraseñas"
       />
 
-      <div className="px-4 py-5 lg:px-6">
-        <div className="mb-6">
-          <h2 className="text-[22px] font-bold text-slate-900">Usuarios del Sistema</h2>
-          <p className="text-sm text-slate-500">
-            Cuentas de acceso, niveles de permiso y contraseñas
-          </p>
-        </div>
-
-        <section className="max-w-6xl rounded-xl bg-white p-7 shadow-sm">
+      <section className="max-w-6xl rounded-xl bg-white p-7 shadow-sm">
           <div className="mb-5 flex items-center justify-between">
             <div className="border-l-4 pl-3" style={{ borderColor: TOKENS.primary }}>
               <h3 className="text-lg font-bold" style={{ color: TOKENS.textDark }}>
@@ -414,8 +406,7 @@ const Usuarios = () => {
               </table>
             </div>
           )}
-        </section>
-      </div>
+      </section>
 
       {/* Se monta sólo cuando está abierto, y así su estado interno se reinicia
           al cerrarlo sin necesitar un useEffect que llame a setState (que dispara

@@ -11,6 +11,7 @@ import DetalleContratoModal from './DetalleContratoModal';
 import RenovarContratoModal from './RenovarContratoModal';
 import RescindirContratoModal from './RescindirContratoModal';
 import FinalizarContratoModal from './FinalizarContratoModal';
+import PageHeader from '../../components/layout/PageHeader';
 
 const getInitials = (nombre = '', apellidos = '') => {
   const parts = `${nombre} ${apellidos}`.trim().split(' ').filter(Boolean);
@@ -118,20 +119,21 @@ const Contratos = () => {
 
   return (
     <div className="w-full min-w-0 max-w-full space-y-6 px-6 py-6">
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-slate-900">Gestión de Contratos</h1>
-          <p className="mt-2 text-sm text-slate-500">{activeContratosCount} contratos activos · {porVencerCount} por vencer</p>
-        </div>
-        <button
-          type="button"
-          onClick={() => abrirModal('nuevo')}
-          className="sticky right-0 z-10 inline-flex items-center gap-2 rounded-2xl bg-primary px-5 py-3 text-sm font-semibold text-white transition hover:bg-primary/90"
-        >
-          <FilePlus className="h-4 w-4" />
-          Nuevo Contrato
-        </button>
-      </div>
+      <PageHeader
+        title="Gestión de Contratos"
+        subtitle={`${activeContratosCount} contratos activos · ${porVencerCount} por vencer`}
+        actions={
+          /* sticky right-0 se conserva: la tabla de abajo scrollea en horizontal. */
+          <button
+            type="button"
+            onClick={() => abrirModal('nuevo')}
+            className="sticky right-0 z-10 inline-flex items-center gap-2 rounded-2xl bg-primary px-5 py-3 text-sm font-semibold text-white transition hover:bg-primary/90"
+          >
+            <FilePlus className="h-4 w-4" />
+            Nuevo Contrato
+          </button>
+        }
+      />
 
       <div className="rounded-3xl bg-white p-5 shadow-sm">
         <div className="grid grid-cols-1 gap-4 2xl:grid-cols-[minmax(280px,2fr)_repeat(3,minmax(150px,1fr))]">

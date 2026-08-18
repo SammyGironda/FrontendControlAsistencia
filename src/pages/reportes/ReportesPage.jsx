@@ -13,7 +13,7 @@ import {
   FileX,
 } from 'lucide-react';
 
-import Header from '../../components/layout/Header';
+import PageHeader from '../../components/layout/PageHeader';
 import { getEmpleados } from '../../api/empleados';
 import * as apiReportes from '../../api/reportes';
 import { useReportes, useGenerarReporte, useEliminarReporte } from '../../hooks/useReportes';
@@ -174,16 +174,13 @@ const ReportesPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <Header title="Reportes y Exportación" subtitle="Generación de reportes normativos y de gestión" />
+    <div className="p-6">
+      <PageHeader
+        title="Reportes y Exportación"
+        subtitle="Generación de reportes normativos y de gestión"
+      />
 
-      <div className="px-4 py-5 lg:px-6">
-        <div className="mb-6">
-          <h2 className="text-[22px] font-bold text-slate-900">Reportes y Exportación</h2>
-          <p className="text-sm text-slate-500">Generación de reportes normativos y de gestión</p>
-        </div>
-
-        <div className="grid grid-cols-12 gap-6">
+      <div className="grid grid-cols-12 gap-6">
           <div className="col-span-12 lg:col-span-8">
             <section className="rounded-2xl bg-white p-6 shadow-sm">
               <h3 className="text-sm font-semibold text-[16px]" style={{ color: colors.textDark }}>Tipo de Reporte</h3>
@@ -453,7 +450,6 @@ const ReportesPage = () => {
               </div>
             </div>
           </aside>
-        </div>
       </div>
     </div>
   );

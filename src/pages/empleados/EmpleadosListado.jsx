@@ -10,6 +10,7 @@ import { activarEmpleado, rehabilitarEmpleado, suspenderEmpleado, darBajaEmplead
 import { toast } from 'react-hot-toast';
 import { Tooltip } from 'react-tooltip';
 import AsignarHorarioDrawer from './AsignarHorarioDrawer';
+import PageHeader from '../../components/layout/PageHeader';
 
 const getInitials = (name = '') => {
     if (!name) return '';
@@ -354,21 +355,21 @@ const EmpleadosListado = () => {
 
   return (
     <div className="flex flex-col h-full min-w-0">
-      <div className="flex flex-wrap items-start justify-between gap-4 mb-4">
-        <div>
-            <h1 className="text-2xl font-bold text-gray-800">Gestión de Empleados</h1>
-            <p className="text-sm text-gray-500 mt-1">
-                {activeCount} empleados activos - {inactiveCount} inactivos
-            </p>
-        </div>
-        <Link
-          to="/empleados/nuevo"
-          className="sticky right-0 z-10 flex-shrink-0 flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-semibold hover:bg-primary-hover transition-colors whitespace-nowrap"
-        >
-          <Plus className="-ml-1 mr-2 h-5 w-5" />
-          Nuevo Empleado
-        </Link>
-      </div>
+      <PageHeader
+        title="Gestión de Empleados"
+        subtitle={`${activeCount} empleados activos - ${inactiveCount} inactivos`}
+        actions={
+          /* sticky right-0 / flex-shrink-0 se conservan: la tabla de abajo tiene
+             overflow-x-auto y sin ellos el boton se va con el scroll horizontal. */
+          <Link
+            to="/empleados/nuevo"
+            className="sticky right-0 z-10 flex-shrink-0 flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-semibold hover:bg-primary-hover transition-colors whitespace-nowrap"
+          >
+            <Plus className="-ml-1 mr-2 h-5 w-5" />
+            Nuevo Empleado
+          </Link>
+        }
+      />
       <div className="bg-white p-4 rounded-lg shadow-sm mb-6">
         <div className="flex flex-wrap gap-3 mb-4 items-center">
             <div className="relative flex-1 min-w-[200px]">

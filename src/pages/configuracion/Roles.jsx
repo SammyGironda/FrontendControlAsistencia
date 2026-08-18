@@ -10,7 +10,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import Header from '../../components/layout/Header';
+import PageHeader from '../../components/layout/PageHeader';
 import {
   crearRol,
   eliminarRol,
@@ -210,15 +210,11 @@ const Roles = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <Header title="Roles del Sistema" subtitle="Administración de perfiles de acceso" />
-
-      <div className="px-4 py-5 lg:px-6">
-        <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h1 className="text-[22px] font-bold text-slate-900">Roles del Sistema</h1>
-            <p className="mt-1 text-sm text-slate-500">Administración de perfiles de acceso</p>
-          </div>
+    <div className="p-6">
+      <PageHeader
+        title="Roles del Sistema"
+        subtitle="Administración de perfiles de acceso"
+        actions={
           <button
             type="button"
             onClick={handleClear}
@@ -227,9 +223,10 @@ const Roles = () => {
             <Plus className="h-4 w-4" />
             Nuevo Rol
           </button>
-        </div>
+        }
+      />
 
-        <div className="grid gap-5 xl:grid-cols-[60%_40%]">
+      <div className="grid gap-5 xl:grid-cols-[60%_40%]">
           <section className="rounded-[12px] bg-white p-6 shadow-sm">
             <div className="mb-4 flex items-center justify-between gap-4">
               <h2 className="text-base font-semibold text-slate-900">Roles existentes</h2>
@@ -469,7 +466,6 @@ const Roles = () => {
               </div>
             </div>
           </aside>
-        </div>
       </div>
 
       {deleteModalOpen && roleToDelete && (

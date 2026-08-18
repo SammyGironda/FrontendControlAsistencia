@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { AlertCircle, CheckCircle, XCircle, Search, Paperclip, LogIn, LogOut } from 'lucide-react';
 import { toast } from 'react-hot-toast';
-import Header from '../../components/layout/Header';
+import PageHeader from '../../components/layout/PageHeader';
 import { getIncidenciasPendientes, resolverIncidencia } from '../../api/marcaciones';
 import { getEmpleado } from '../../api/empleados';
 import useAuthStore from '../../store/authStore';
@@ -291,17 +291,21 @@ const ResolucionIncidencias = () => {
   };
 
   return (
-    <>
-      <Header title="Resolución de Incidencias" subtitle="Marcaciones con conflictos pendientes de revisión">
-        {pendientesCount > 0 && (
-          <div className="flex items-center gap-2 text-red-600 bg-red-100 rounded-full px-3 py-1 text-sm font-semibold">
-            <AlertCircle size={16} />
-            {pendientesCount} Pendientes
-          </div>
-        )}
-      </Header>
+    <div className="p-6">
+      <PageHeader
+        title="Resolución de Incidencias"
+        subtitle="Marcaciones con conflictos pendientes de revisión"
+        actions={
+          pendientesCount > 0 ? (
+            <div className="flex items-center gap-2 text-red-600 bg-red-100 rounded-full px-3 py-1 text-sm font-semibold">
+              <AlertCircle size={16} />
+              {pendientesCount} Pendientes
+            </div>
+          ) : null
+        }
+      />
 
-      <div className="px-6 pb-10">
+      <div className="pb-10">
         {/* Barra de Filtros */}
         <div className="bg-white p-4 rounded-lg shadow-sm mb-6">
           <div className="flex items-center justify-between">
@@ -499,7 +503,7 @@ const ResolucionIncidencias = () => {
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 };
 

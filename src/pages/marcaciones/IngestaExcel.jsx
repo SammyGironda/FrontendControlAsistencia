@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AlertTriangle, CheckCircle, Copy, Database, FileSpreadsheet, Loader2, Upload, XCircle } from 'lucide-react';
 import { toast } from 'react-hot-toast';
-import Header from '../../components/layout/Header';
+import PageHeader from '../../components/layout/PageHeader';
 import {
   subirExcel,
   crearMarcacion,
@@ -256,9 +256,12 @@ const IngestaExcel = () => {
   const hasCriticalErrors = validationData.erroresCriticos.length > 0;
 
   return (
-    <div className="min-h-full">
-      <Header title="Ingesta de Marcaciones" subtitle="Carga y validacion de planillas Excel" />
-      <div className="px-6 pb-10">
+    <div className="min-h-full p-6">
+      <PageHeader
+        title="Ingesta de Marcaciones"
+        subtitle="Carga y validación de planillas Excel"
+      />
+      <div className="pb-10">
         <div className="mx-auto w-full max-w-[800px]">
           {viewState === 'idle' && (
             <div className="space-y-6">

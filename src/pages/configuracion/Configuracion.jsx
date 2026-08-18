@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
-import Header from '../../components/layout/Header';
+import PageHeader from '../../components/layout/PageHeader';
 import { useHorarios, useCreateHorario, useUpdateHorario, useDeleteHorario } from '../../hooks/useHorarios';
 
 const DAY_LABELS = [
@@ -274,16 +274,13 @@ const Configuracion = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <Header title="Configuración del Sistema" subtitle="Reglas de asistencia, turnos y parámetros del sistema RRHH" />
+    <div className="p-6">
+      <PageHeader
+        title="Configuración del Sistema"
+        subtitle="Reglas de asistencia, turnos y parámetros del sistema RRHH"
+      />
 
-      <div className="px-4 py-5 lg:px-6">
-        <div className="mb-6">
-          <h2 className="text-[22px] font-bold text-slate-900">Configuración del Sistema</h2>
-          <p className="text-sm text-slate-500">Reglas de asistencia, turnos y parámetros del sistema RRHH</p>
-        </div>
-
-        <div className="space-y-5 max-w-4xl">
+      <div className="space-y-5 max-w-4xl">
           {/* CARD 1: REGLAS DE ASISTENCIA */}
           <section
             className="rounded-xl bg-white p-7 shadow-sm"
@@ -601,7 +598,6 @@ const Configuracion = () => {
               </div>
             )}
           </section>
-        </div>
       </div>
 
       {/* MODAL CREAR/EDITAR HORARIO */}

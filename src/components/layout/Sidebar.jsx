@@ -177,42 +177,60 @@ const Sidebar = () => {
             const isActive = isItemActive(item.path);
             const hasSubItems = item.subItems && item.subItems.length > 0;
             const isConfigItem = item.path === '/configuracion' && hasSubItems;
-            return (
-              <li key={item.name}>
-                <Link
-                  to={item.path}
-                  onClick={isConfigItem ? () => setConfigExpanded((prev) => !prev) : undefined}
-                  className={`flex items-center gap-3 px-4 py-2.5 rounded-lg cursor-pointer transition-colors relative ${
-                    isActive
-                      ? 'bg-white/10'
-                      : 'hover:bg-white/8'
+
+            const clasesItem = `flex items-center gap-3 px-4 py-2.5 rounded-lg cursor-pointer transition-colors relative ${
+              isActive ? 'bg-white/10' : 'hover:bg-white/8'
+            }`;
+
+            const contenidoItem = (
+              <>
+                <item.icon
+                  className={`w-[18px] h-[18px] flex-shrink-0 ${
+                    isActive ? 'text-white' : 'text-white/50'
+                  }`}
+                />
+                <span
+                  className={`text-sm ${
+                    isActive ? 'text-white font-semibold' : 'text-white/70'
                   }`}
                 >
-                  <item.icon
-                    className={`w-[18px] h-[18px] flex-shrink-0 ${
-                      isActive ? 'text-white' : 'text-white/50'
+                  {item.name}
+                </span>
+                {isConfigItem && (
+                  <ChevronDown
+                    className={`w-4 h-4 ml-auto transition-transform duration-200 ${
+                      configExpanded ? 'rotate-180 text-white' : 'text-white/50'
                     }`}
                   />
-                  <span
-                    className={`text-sm ${
-                      isActive
-                        ? 'text-white font-semibold'
-                        : 'text-white/70'
-                    }`}
+                )}
+                {isActive && !item.subItems && (
+                  <div className="absolute right-4 w-1.5 h-1.5 rounded-full bg-[#D9A404]" />
+                )}
+              </>
+            );
+
+            return (
+              <li key={item.name}>
+                {/* Configuracion despliega el submenu, no navega: por eso es un
+                    <button> y no un <Link>. Interceptar el clic de un <Link> con
+                    preventDefault dejaria un <a href> que miente — se abriria en
+                    pestana nueva con Ctrl+clic y se anuncia como enlace.
+                    w-full porque un boton se encoge a su contenido aun con
+                    display:flex, a diferencia del <a> que rendea <Link>. */}
+                {isConfigItem ? (
+                  <button
+                    type="button"
+                    onClick={() => setConfigExpanded((prev) => !prev)}
+                    aria-expanded={configExpanded}
+                    className={`w-full text-left ${clasesItem}`}
                   >
-                    {item.name}
-                  </span>
-                  {isConfigItem && (
-                    <ChevronDown
-                      className={`w-4 h-4 ml-auto transition-transform duration-200 ${
-                        configExpanded ? 'rotate-180 text-white' : 'text-white/50'
-                      }`}
-                    />
-                  )}
-                  {isActive && !item.subItems && (
-                    <div className="absolute right-4 w-1.5 h-1.5 rounded-full bg-[#D9A404]" />
-                  )}
-                </Link>
+                    {contenidoItem}
+                  </button>
+                ) : (
+                  <Link to={item.path} className={clasesItem}>
+                    {contenidoItem}
+                  </Link>
+                )}
                 {item.subItems && (
                   <ul className={`pl-3 pt-1 overflow-hidden transition-all duration-200 ${
                     (isConfigItem ? configExpanded : true)

@@ -150,7 +150,7 @@ const Sidebar = () => {
     // total de la pagina, que es lo que le deja margen a sticky para funcionar.
     <div className="w-60 flex-shrink-0 self-start h-screen bg-[#03178C] text-white flex flex-col sticky top-0 z-50 justify-between">
       {/* Zona Superior - Logo */}
-      <div className="p-5">
+      <div className="flex-shrink-0 p-5">
         <div className="flex items-center gap-3">
           <div className="flex-shrink-0 w-10 h-10 rounded-[10px] bg-[#D9A404] flex items-center justify-center">
             <ClipboardList className="w-5 h-5 text-white" />
@@ -163,7 +163,12 @@ const Sidebar = () => {
       </div>
 
       {/* Navegación */}
-      <nav className="flex-1">
+      {/* min-h-0 desarma el `min-height: auto` que trae todo flex item: sin el,
+          flex-1 nunca deja que este nav mida menos que su contenido, el sobrante
+          se derrama fuera del h-screen del padre y los ultimos items quedan
+          inalcanzables (el padre es sticky, scrollear la pagina no lo mueve).
+          Con la altura ya acotada, overflow-y-auto le da su propio scroll. */}
+      <nav className="flex-1 min-h-0 overflow-y-auto sidebar-scroll">
         <p className="text-white/40 font-semibold text-xs uppercase tracking-widest px-5 pt-4 pb-2">
           Módulos
         </p>
@@ -259,7 +264,7 @@ const Sidebar = () => {
       </nav>
 
       {/* Zona Inferior - Usuario */}
-      <div className="p-4 border-t border-white/10">
+      <div className="flex-shrink-0 p-4 border-t border-white/10">
         <div className="flex items-center gap-2.5 justify-between">
           <div className="flex items-center gap-2.5">
             <div className="flex-shrink-0 w-9 h-9 rounded-full bg-[#1E3A8A] flex items-center justify-center text-white font-semibold text-xs">

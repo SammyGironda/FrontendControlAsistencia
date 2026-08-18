@@ -144,7 +144,11 @@ const Sidebar = () => {
   };
 
   return (
-    <div className="w-60 h-screen bg-[#03178C] text-white flex flex-col fixed top-0 left-0 z-50 justify-between">
+    // sticky y no fixed: asi el sidebar ocupa su propio espacio dentro del flex
+    // row de MainLayout y el contenido calcula su ancho solo, sin el ml-60 que
+    // antes reservaba el hueco a mano. self-start evita que se estire a la altura
+    // total de la pagina, que es lo que le deja margen a sticky para funcionar.
+    <div className="w-60 flex-shrink-0 self-start h-screen bg-[#03178C] text-white flex flex-col sticky top-0 z-50 justify-between">
       {/* Zona Superior - Logo */}
       <div className="p-5">
         <div className="flex items-center gap-3">

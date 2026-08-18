@@ -5,6 +5,7 @@ import {
   KeyRound,
   Loader2,
   Plus,
+  ShieldAlert,
   Trash2,
   UserX,
   Users as UsersIcon,
@@ -21,7 +22,7 @@ import { formatFechaHora } from '../../lib/formatters';
 import {
   mensajeDeError,
   useEliminarUsuario,
-  useEmpleadosParaCuenta,
+  useEmpleadosParaNombres,
   useResetearPassword,
   useRolesCatalogo,
   useToggleActivoUsuario,
@@ -55,10 +56,36 @@ const Badge = ({ texto, fondo, color }) => (
   </span>
 );
 
+// Toda esta pantalla es admin-only: crear cuentas, restablecer contraseñas y
+// eliminarlas son endpoints `require_admin`. El backend deja que rrhh haga el
+// GET del padrón, pero no tendría ninguna acción disponible, así que se cierra
+// entera en vez de mostrarle una tabla de solo lectura.
+//
+// Como siempre, esto es COSMÉTICO: la autorización real la aplica el backend.
 const Usuarios = () => {
   const { user } = useAuthStore();
-  const puedeGestionar = esAdmin(user);
 
+  if (!esAdmin(user)) return <SinPermiso />;
+
+  return <PanelUsuarios user={user} />;
+};
+
+const SinPermiso = () => (
+  <div className="space-y-5 p-6">
+    <div className="flex flex-col items-center gap-3 rounded-[12px] border border-[#E2E8F0] bg-white px-6 py-14 text-center shadow-sm">
+      <ShieldAlert className="h-8 w-8 text-[#CBD5E0]" />
+      <h1 className="text-[18px] font-semibold text-[#1A202C]">
+        No tienes permiso para ver esta sección
+      </h1>
+      <p className="max-w-md text-[13px] text-[#718096]">
+        La gestión de cuentas de acceso está reservada al rol
+        <strong> admin</strong>.
+      </p>
+    </div>
+  </div>
+);
+
+const PanelUsuarios = ({ user }) => {
   const [modalAltaAbierto, setModalAltaAbierto] = useState(false);
   // { username, password, esReseteo } — se llena tanto al crear como al resetear.
   const [passwordAMostrar, setPasswordAMostrar] = useState(null);
@@ -66,7 +93,7 @@ const Usuarios = () => {
   const [confirmandoBorrado, setConfirmandoBorrado] = useState(null);
 
   const { data: usuarios, isLoading, isError } = useUsuarios();
-  const { data: empleados } = useEmpleadosParaCuenta();
+  const { data: empleados } = useEmpleadosParaNombres();
   const { data: roles } = useRolesCatalogo();
 
   const resetearMutation = useResetearPassword();
@@ -146,30 +173,16 @@ const Usuarios = () => {
                 Cuentas registradas
               </h3>
             </div>
-            {puedeGestionar && (
-              <button
-                type="button"
-                onClick={() => setModalAltaAbierto(true)}
-                className="flex items-center gap-2 rounded-lg px-5 py-2 text-sm font-semibold text-white transition hover:opacity-90"
-                style={{ backgroundColor: TOKENS.primary }}
-              >
-                <Plus className="h-4 w-4" />
-                Nueva cuenta
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={() => setModalAltaAbierto(true)}
+              className="flex items-center gap-2 rounded-lg px-5 py-2 text-sm font-semibold text-white transition hover:opacity-90"
+              style={{ backgroundColor: TOKENS.primary }}
+            >
+              <Plus className="h-4 w-4" />
+              Nueva cuenta
+            </button>
           </div>
-
-          {/* Ocultar los botones es COSMÉTICO: el backend igual responde 403.
-              Sirve para no ofrecer una acción que va a fallar. */}
-          {!puedeGestionar && (
-            <div className="mb-5 flex items-start gap-2 rounded-lg border border-blue-100 bg-[#EBF4FF] p-3">
-              <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#03178C]" />
-              <p className="text-sm text-slate-600">
-                Puedes consultar el padrón, pero crear cuentas y restablecer
-                contraseñas está reservado al administrador.
-              </p>
-            </div>
-          )}
 
           {isLoading && (
             <div className="space-y-4">
@@ -286,12 +299,7 @@ const Usuarios = () => {
                         </td>
 
                         <td className="px-3 py-4">
-                          {!puedeGestionar ? (
-                            <span className="text-sm" style={{ color: TOKENS.textMuted }}>
-                              —
-                            </span>
-                          ) : (
-                            <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-3">
                               {/* Restablecer contraseña */}
                               {confirmandoReseteo === usuario.id ? (
                                 <div className="flex items-center gap-1">
@@ -396,8 +404,7 @@ const Usuarios = () => {
                                   <Trash2 className="h-4 w-4" />
                                 </button>
                               )}
-                            </div>
-                          )}
+                          </div>
                         </td>
                       </tr>
                     );

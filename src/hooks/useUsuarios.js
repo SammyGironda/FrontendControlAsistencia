@@ -45,6 +45,24 @@ export const useEmpleadosParaCuenta = () =>
     staleTime: CINCO_MINUTOS,
   });
 
+// Empleados para RESOLVER NOMBRES en el padron de cuentas. Necesita justo lo
+// contrario que useEmpleadosParaCuenta: aca si van los dados de baja.
+//
+// Dar de baja a un empleado no borra su cuenta, asi que su usuario sigue
+// apareciendo en la tabla. Con la lista que excluye bajas, ese id_empleado no
+// encuentra match y la columna EMPLEADO cae en el fallback "Sin empleado
+// vinculado" — que significa otra cosa (una cuenta admin sin legajo, legal
+// porque usuario.id_empleado es nullable). El admin no podria distinguirlas.
+//
+// Query key propia: comparte el prefijo ['empleados'] para que las
+// invalidaciones de las mutaciones la alcancen, pero no pisa la de elegibilidad.
+export const useEmpleadosParaNombres = () =>
+  useQuery({
+    queryKey: ['empleados', 'con-baja'],
+    queryFn: () => getEmpleados({ limit: 500, incluir_baja: true }),
+    staleTime: CINCO_MINUTOS,
+  });
+
 export const useCrearUsuario = () => {
   const queryClient = useQueryClient();
 

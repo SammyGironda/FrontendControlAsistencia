@@ -23,6 +23,23 @@ const ETIQUETA_ESTADO = {
   suspendido: ' (suspendido)',
 };
 
+// Espeja services._slug() del backend: primera palabra, NFKD + descarte de los
+// diacriticos combinantes, minusculas y solo [a-z0-9]. Sin la normalizacion el
+// modal anunciaria "ñuñez" donde el backend crea "nunez", y el admin dictaria
+// por telefono un usuario que no existe.
+//
+// Sigue siendo una PREVISION: el username definitivo lo decide el backend, que
+// ademas puede agregarle un sufijo numerico si ya esta tomado. El valor real se
+// muestra despues en PasswordTemporalModal.
+const slug = (texto) =>
+  (texto || '')
+    .trim()
+    .split(/\s+/)[0]
+    .normalize('NFKD')
+    .replace(/\p{Diacritic}/gu, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '');
+
 const NuevoUsuarioModal = ({ usuariosExistentes = [], onCerrar, onCreada }) => {
   const [idEmpleado, setIdEmpleado] = useState('');
   const [idRol, setIdRol] = useState('');
@@ -139,9 +156,7 @@ const NuevoUsuarioModal = ({ usuariosExistentes = [], onCerrar, onCreada }) => {
                       {' '}— para {empleadoElegido.nombres} {empleadoElegido.apellidos} será
                       algo como{' '}
                       <span className="font-mono font-semibold text-slate-900">
-                        {`${(empleadoElegido.nombres || '').trim().split(/\s+/)[0]}.${
-                          (empleadoElegido.apellidos || '').trim().split(/\s+/)[0]
-                        }`.toLowerCase()}
+                        {`${slug(empleadoElegido.nombres)}.${slug(empleadoElegido.apellidos)}`}
                       </span>
                     </>
                   )}

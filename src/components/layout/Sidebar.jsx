@@ -7,7 +7,7 @@ import {
   SlidersHorizontal, Shield, CalendarX, ChevronDown, Palmtree, Clock, UserCog
 } from 'lucide-react';
 import useAuthStore from '../../store/authStore';
-import { esGestor } from '../../lib/permisos';
+import { esAdmin, esGestor } from '../../lib/permisos';
 import { useIncidenciasPendientes } from '../../hooks/useMarcaciones';
 
 const navItems = [
@@ -44,11 +44,12 @@ const navItems = [
       // Desde el 2026-08-13 GET /api/v1/roles/ exige admin o rrhh: sin este flag
       // la pantalla se ofrece a todos y responde 403 al cargar.
       { name: 'Roles del Sistema', icon: Shield, path: '/configuracion/roles', soloGestores: true },
-      // GET /api/v1/usuarios/ es admin+rrhh (rrhh consulta el padron), asi que
-      // el flag correcto es soloGestores y no uno de solo-admin. Dentro de la
-      // pantalla, crear cuentas y resetear contrasenas se oculta a rrhh aparte:
-      // esos endpoints si son admin.
-      { name: 'Usuarios del Sistema', icon: UserCog, path: '/configuracion/usuarios', soloGestores: true },
+      // Solo admin. El backend deja que rrhh haga el GET del padron, pero todas
+      // las acciones de la pantalla (crear, resetear, eliminar) son
+      // require_admin: a rrhh le quedaria una tabla de solo lectura sin ningun
+      // boton. La pantalla tambien se cierra por su cuenta, este flag solo evita
+      // ofrecerla en el menu.
+      { name: 'Usuarios del Sistema', icon: UserCog, path: '/configuracion/usuarios', soloAdmin: true },
       { name: 'Feriados', icon: CalendarX, path: '/configuracion/feriados' }
     ]
   },
@@ -67,15 +68,21 @@ const Sidebar = () => {
   const { data: incidencias = [] } = useIncidenciasPendientes();
   const incidenciasCount = incidencias.length;
 
-  // Sub-items reservados a admin/rrhh. Ocultarlos es COSMETICO: el guard real
-  // esta en el backend (require_admin / require_roles). Sirve para no ofrecer
-  // una pantalla que respondera 403.
+  // Sub-items reservados por rol. Ocultarlos es COSMETICO: el guard real esta en
+  // el backend (require_admin / require_roles). Sirve para no ofrecer una
+  // pantalla que respondera 403.
+  //
+  // Son dos alcances distintos y no intercambiables: `soloGestores` es admin+rrhh
+  // (espeja ROLES_GESTORES) y `soloAdmin` es admin a secas. esGestor NO implica
+  // esAdmin, asi que un item mal etiquetado se le ofrece a rrhh para que reciba
+  // un 403 al entrar.
   //
   // Cuando no queda ningun sub-item visible hay que borrar la clave, no dejar
   // un array vacio: el render hace `{item.subItems && (<ul>...)}`, asi que un
   // array vacio pinta un <ul> con padding, y ademas apaga el punto dorado del
   // item activo, que depende de `!item.subItems`.
-  const puedeVerCompensaciones = esGestor(user);
+  const puedeVerDeGestores = esGestor(user);
+  const puedeVerDeAdmin = esAdmin(user);
 
   const itemsVisibles = useMemo(
     () =>
@@ -83,14 +90,16 @@ const Sidebar = () => {
         if (!item.subItems) return item;
 
         const subItems = item.subItems.filter(
-          (sub) => !sub.soloGestores || puedeVerCompensaciones
+          (sub) =>
+            (!sub.soloGestores || puedeVerDeGestores) &&
+            (!sub.soloAdmin || puedeVerDeAdmin)
         );
 
         return subItems.length > 0
           ? { ...item, subItems }
           : { ...item, subItems: undefined };
       }),
-    [puedeVerCompensaciones]
+    [puedeVerDeGestores, puedeVerDeAdmin]
   );
 
   // Depende de la ruta a proposito, y es lo unico que deberia: al entrar a

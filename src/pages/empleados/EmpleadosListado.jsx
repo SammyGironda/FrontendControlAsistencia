@@ -11,6 +11,9 @@ import { toast } from 'react-hot-toast';
 import { Tooltip } from 'react-tooltip';
 import AsignarHorarioDrawer from './AsignarHorarioDrawer';
 import PageHeader from '../../components/layout/PageHeader';
+import { useDepartamentos } from '../../hooks/useDepartamentos';
+import { useCargosCatalogo } from '../../hooks/useCargos';
+import { aplanarArbol, construirArbol } from '../../lib/arbolDepartamentos';
 
 const getInitials = (name = '') => {
     if (!name) return '';
@@ -38,13 +41,76 @@ const EmpleadosListado = () => {
   const [empleadoParaAsignar, setEmpleadoParaAsignar] = useState(null);
   const [isAsignarDrawerOpen, setIsAsignarDrawerOpen] = useState(false);
 
+  // Catalogos para mostrar NOMBRES en vez de ids y para poblar los filtros.
+  // Los dos traen tambien los inactivos a proposito: un empleado puede seguir
+  // asignado a un cargo o departamento que despues se desactivo, y con la lista
+  // filtrada su id no encontraria match — la columna volveria a mostrar el
+  // numero crudo, que es justo lo que se quiso eliminar.
+  const { data: departamentos } = useDepartamentos();
+  const { data: cargos } = useCargosCatalogo();
+
+  const listaDepartamentos = useMemo(
+    () => (Array.isArray(departamentos) ? departamentos : []),
+    [departamentos]
+  );
+  const listaCargos = useMemo(() => (Array.isArray(cargos) ? cargos : []), [cargos]);
+
+  const nombrePorDepartamento = useMemo(
+    () => new Map(listaDepartamentos.map((d) => [d.id, d.nombre])),
+    [listaDepartamentos]
+  );
+  const nombrePorCargo = useMemo(
+    () => new Map(listaCargos.map((c) => [c.id, c.nombre])),
+    [listaCargos]
+  );
+
+  // Los departamentos del desplegable van en orden de organigrama y sangrados,
+  // reusando los helpers de la pantalla de Departamentos. En un <option> los
+  // espacios normales se colapsan, por eso la sangria es con NBSP.
+  const opcionesDepartamento = useMemo(
+    () =>
+      aplanarArbol(construirArbol(listaDepartamentos)).map((d) => ({
+        id: d.id,
+        // OJO: el caracter que se repite es un NBSP (U+00A0), no un espacio
+        // normal. El navegador colapsa los espacios dentro de un <option> y la
+        // sangria del organigrama se perderia. Se ve igual en el editor.
+        etiqueta: `${' '.repeat(d.nivel * 3)}${d.nivel > 0 ? '└ ' : ''}${d.nombre}${
+          d.activo ? '' : ' (desactivado)'
+        }`,
+      })),
+    [listaDepartamentos]
+  );
+
+  // Un cargo pertenece a un departamento. Con un departamento elegido, ofrecer
+  // los cargos de otras unidades solo lleva a combinaciones que devuelven cero
+  // resultados sin explicar por que.
+  const opcionesCargo = useMemo(() => {
+    const visibles = filters.id_departamento
+      ? listaCargos.filter((c) => String(c.id_departamento) === String(filters.id_departamento))
+      : listaCargos;
+
+    return visibles
+      .slice()
+      .sort((a, b) => (a.nombre || '').localeCompare(b.nombre || '', 'es'))
+      .map((c) => ({
+        id: c.id,
+        etiqueta: `${c.nombre}${c.activo ? '' : ' (desactivado)'}`,
+      }));
+  }, [listaCargos, filters.id_departamento]);
+
   const empleados = Array.isArray(data) ? data : [];
   const queryClient = useQueryClient();
   const [modalActivo, setModalActivo] = useState(null);
   const [empleadoSeleccionado, setEmpleadoSeleccionado] = useState(null);
 
+  // Los nombres se resuelven ACA y viajan pegados al empleado, en vez de pasar
+  // los dos Map por props a traves de los 4 modales hasta EmpleadoResumenCard.
   const abrirAccion = (tipo, empleado) => {
-    setEmpleadoSeleccionado(empleado);
+    setEmpleadoSeleccionado({
+      ...empleado,
+      nombre_cargo: nombrePorCargo.get(empleado.id_cargo),
+      nombre_departamento: nombrePorDepartamento.get(empleado.id_departamento),
+    });
     setModalActivo(tipo);
   };
 
@@ -126,7 +192,26 @@ const EmpleadosListado = () => {
   };
 
   const handleFilterChange = (e) => {
-    setFilters(prev => ({ ...prev, [e.target.name]: e.target.value }));
+    const { name, value } = e.target;
+
+    setFilters((prev) => {
+      const siguiente = { ...prev, [name]: value };
+
+      // Al cambiar de departamento, el cargo elegido puede pertenecer a otra
+      // unidad: la combinacion devolveria cero resultados sin decir por que, y
+      // encima el cargo desapareceria del desplegable (que se acota al
+      // departamento), dejando un filtro activo e invisible. Se limpia aca y no
+      // en un useEffect, que dispararia react-hooks/set-state-in-effect.
+      if (name === 'id_departamento' && prev.id_cargo) {
+        const cargoElegido = listaCargos.find((c) => String(c.id) === String(prev.id_cargo));
+        const sigueEnElDepartamento =
+          !value || (cargoElegido && String(cargoElegido.id_departamento) === String(value));
+
+        if (!sigueEnElDepartamento) siguiente.id_cargo = '';
+      }
+
+      return siguiente;
+    });
     setPage(1);
   }
 
@@ -161,14 +246,29 @@ const EmpleadosListado = () => {
         ),
       },
       {
-        Header: 'CARGO ID',
+        Header: 'CARGO',
         accessor: 'id_cargo',
-        Cell: ({ value }) => <span className="text-sm text-gray-700">{value}</span>
+        // El catalogo puede no haber llegado todavia, o el id puede apuntar a un
+        // registro borrado. En vez de dejar la celda vacia se muestra el id, que
+        // al menos permite rastrearlo.
+        Cell: ({ value }) => (
+          <span className="text-sm text-gray-700">
+            {nombrePorCargo.get(value) || (
+              <span className="text-gray-400">{value ? `Cargo ${value}` : '—'}</span>
+            )}
+          </span>
+        ),
       },
       {
-        Header: 'DEPARTAMENTO ID',
+        Header: 'DEPARTAMENTO',
         accessor: 'id_departamento',
-        Cell: ({ value }) => <span className="text-sm text-gray-700">{value}</span>
+        Cell: ({ value }) => (
+          <span className="text-sm text-gray-700">
+            {nombrePorDepartamento.get(value) || (
+              <span className="text-gray-400">{value ? `Departamento ${value}` : '—'}</span>
+            )}
+          </span>
+        ),
       },
       {
         Header: 'FECHA INGRESO',
@@ -347,7 +447,10 @@ const EmpleadosListado = () => {
         },
       },
     ],
-    [navigate]
+    // Los dos Map son dependencias reales: llegan despues del primer render
+    // (son otra query), y sin ellas las columnas se quedarian con el fallback
+    // "Cargo 3" para siempre.
+    [navigate, nombrePorCargo, nombrePorDepartamento]
   );
 
   const activeCount = empleadosVisibles.filter((empleado) => empleado.estado === 'activo').length;
@@ -385,25 +488,39 @@ const EmpleadosListado = () => {
                     className="flex-1 min-w-[200px] pl-10 pr-4 py-2 border border-gray-300 rounded-md w-full focus:ring-blue-500 focus:border-blue-500"
                 />
             </div>
-              <div className="relative flex-shrink-0 min-w-[140px]">
-                <input
-                  type="number"
+              {/* Se elige por NOMBRE y se manda el id: el value del <option> es
+                  el id, que es lo que espera el query param del backend. */}
+              <div className="relative flex-shrink-0 min-w-[200px]">
+                <select
                   name="id_departamento"
                   value={filters.id_departamento}
                   onChange={handleFilterChange}
-                  placeholder="ID Departamento"
-                  className="flex-shrink-0 min-w-[140px] appearance-none bg-transparent border-gray-300 rounded-md w-full py-2 pl-3 pr-10 text-gray-700 focus:ring-blue-500 focus:border-blue-500"
-                />
+                  className="flex-shrink-0 min-w-[200px] appearance-none bg-transparent border-gray-300 rounded-md w-full py-2 pl-3 pr-10 text-gray-700 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="">Todos los departamentos</option>
+                  {opcionesDepartamento.map((d) => (
+                    <option key={d.id} value={String(d.id)}>
+                      {d.etiqueta}
+                    </option>
+                  ))}
+                </select>
             </div>
-            <div className="relative flex-shrink-0 min-w-[140px]">
-                <input
-                  type="number"
+            <div className="relative flex-shrink-0 min-w-[200px]">
+                <select
                   name="id_cargo"
                   value={filters.id_cargo}
                   onChange={handleFilterChange}
-                  placeholder="ID Cargo"
-                  className="flex-shrink-0 min-w-[140px] appearance-none bg-transparent border-gray-300 rounded-md w-full py-2 pl-3 pr-10 text-gray-700 focus:ring-blue-500 focus:border-blue-500"
-                />
+                  className="flex-shrink-0 min-w-[200px] appearance-none bg-transparent border-gray-300 rounded-md w-full py-2 pl-3 pr-10 text-gray-700 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="">
+                    {filters.id_departamento ? 'Todos los cargos del área' : 'Todos los cargos'}
+                  </option>
+                  {opcionesCargo.map((c) => (
+                    <option key={c.id} value={String(c.id)}>
+                      {c.etiqueta}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div className="relative flex-shrink-0 min-w-[140px]">
                 <select name="estado" value={filters.estado} onChange={handleFilterChange} className="flex-shrink-0 min-w-[140px] appearance-none bg-transparent border-gray-300 rounded-md w-full py-2 pl-3 pr-10 text-gray-700 focus:ring-blue-500 focus:border-blue-500">
@@ -477,8 +594,10 @@ const EmpleadosListado = () => {
 const columnWidths = {
   nombres: 'min-w-[300px] w-[28%]',
   ci_numero: 'min-w-[150px] w-[12%]',
-  id_cargo: 'min-w-[130px] w-[10%]',
-  id_departamento: 'min-w-[180px] w-[14%]',
+  // Mas anchas que cuando mostraban ids: ahora llevan nombres como
+  // "Jefe de Recursos Humanos".
+  id_cargo: 'min-w-[180px] w-[12%]',
+  id_departamento: 'min-w-[200px] w-[14%]',
   fecha_ingreso: 'min-w-[160px] w-[12%]',
   estado: 'min-w-[120px] w-[8%]',
   acciones: 'w-[16%] min-w-[190px]',
@@ -626,7 +745,13 @@ const EmpleadoResumenCard = ({ empleado, badgeText, badgeStyle }) => {
         <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold text-slate-900">{`${empleado.nombres} ${empleado.apellidos}`}</p>
           <p className="text-sm text-slate-500">{ciCompleto}</p>
-          <p className="text-sm text-slate-500">{`Cargo ${empleado.id_cargo} · Departamento ${empleado.id_departamento}`}</p>
+          {/* Los nombres los adjunta abrirAccion(); el id queda de fallback por
+              si el catalogo todavia no cargo. */}
+          <p className="text-sm text-slate-500">
+            {`${empleado.nombre_cargo || `Cargo ${empleado.id_cargo}`} · ${
+              empleado.nombre_departamento || `Departamento ${empleado.id_departamento}`
+            }`}
+          </p>
         </div>
         <span
           className="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold"

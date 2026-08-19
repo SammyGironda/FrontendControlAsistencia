@@ -75,10 +75,9 @@ export const eliminarEmpleado = async () => {
   throw new Error('TODO: este endpoint DELETE /empleados/{id} no existe en el backend');
 };
 
-export const getCargos = async () => {
-  const { data } = await client.get(`${API_PREFIX}/cargos/`);
-  return data;
-};
+// Re-exportada desde api/cargos.js, igual que getDepartamentos. Se mantiene la
+// salida desde aca para no tocar el import de EmpleadoForm.jsx.
+export { getCargos } from './cargos';
 
 // Re-exportada desde api/departamentos.js, que es donde vive ahora la definicion
 // (junto al resto del CRUD del modulo). Se mantiene la salida desde aca para no

@@ -52,6 +52,11 @@ export const aNumero = (valor) => {
 // "8.0 h" — una sola decimal, que es la precision real de la columna (4,1).
 export const formatearHoras = (valor) => `${aNumero(valor).toFixed(1)} h`;
 
+// "13.00 %" — dos decimales, la precision real de la columna NUMERIC(5,2).
+// Usa aNumero y no formatMoneda porque los Decimal del backend viajan como
+// STRING ("13.00") y formatMoneda devuelve '' para todo lo que no sea number.
+export const formatearPorcentaje = (valor) => `${aNumero(valor).toFixed(2)} %`;
+
 export const horasADias = (horas) => {
   if (typeof horas !== 'number') return 0;
   return parseFloat((horas / 8).toFixed(1));

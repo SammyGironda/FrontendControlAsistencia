@@ -13,6 +13,7 @@ import ResolucionIncidencias from './pages/marcaciones/ResolucionIncidencias';
 import AsistenciaPage from './pages/asistencia/AsistenciaPage';
 import ReportesPage from './pages/reportes/ReportesPage';
 import Configuracion from './pages/configuracion/Configuracion';
+import Departamentos from './pages/configuracion/Departamentos';
 import Roles from './pages/configuracion/Roles';
 import Usuarios from './pages/configuracion/Usuarios';
 import Feriados from './pages/configuracion/Feriados';
@@ -161,6 +162,7 @@ function App() {
           <Route path="/vacaciones/compensaciones" element={<CompensacionesPage />} />
           <Route path="/reportes" element={<ReportesPage />} />
           <Route path="/configuracion" element={<Configuracion />} />
+          <Route path="/configuracion/departamentos" element={<Departamentos />} />
           <Route path="/configuracion/roles" element={<Roles />} />
           <Route path="/configuracion/usuarios" element={<Usuarios />} />
           <Route path="/configuracion/feriados" element={<Feriados />} />

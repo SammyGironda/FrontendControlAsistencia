@@ -80,10 +80,11 @@ export const getCargos = async () => {
   return data;
 };
 
-export const getDepartamentos = async () => {
-  const { data } = await client.get(`${API_PREFIX}/departamentos/`);
-  return data;
-};
+// Re-exportada desde api/departamentos.js, que es donde vive ahora la definicion
+// (junto al resto del CRUD del modulo). Se mantiene la salida desde aca para no
+// tocar el import de pages/empleados/EmpleadoForm.jsx, que la usa para llenar el
+// desplegable "Area / Departamento".
+export { getDepartamentos } from './departamentos';
 
 export const getHorarios = async () => {
   const { data } = await client.get(`${API_PREFIX}/horarios/`);

@@ -4,7 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import {
   LayoutDashboard, Users, Upload, CalendarCheck,
   FileText, Settings, ClipboardList, LogOut, AlertCircle, FileSignature,
-  SlidersHorizontal, Shield, CalendarX, ChevronDown, Palmtree, Clock, UserCog
+  SlidersHorizontal, Shield, CalendarX, ChevronDown, Palmtree, Clock, UserCog, Network
 } from 'lucide-react';
 import useAuthStore from '../../store/authStore';
 import { esAdmin, esGestor } from '../../lib/permisos';
@@ -41,6 +41,11 @@ const navItems = [
     path: '/configuracion',
     subItems: [
       { name: 'Reglas y Turnos', icon: SlidersHorizontal, path: '/configuracion' },
+      // La estructura organizacional (rrhh.departamento, jerarquica). El backend
+      // deja leerla a cualquier autenticado, pero escribirla es require_admin;
+      // la pantalla se abre a admin+rrhh porque el organigrama en solo lectura
+      // le sirve a RRHH, y oculta los botones para quien no es admin.
+      { name: 'Departamentos', icon: Network, path: '/configuracion/departamentos', soloGestores: true },
       // Desde el 2026-08-13 GET /api/v1/roles/ exige admin o rrhh: sin este flag
       // la pantalla se ofrece a todos y responde 403 al cargar.
       { name: 'Roles del Sistema', icon: Shield, path: '/configuracion/roles', soloGestores: true },
@@ -227,9 +232,13 @@ const Sidebar = () => {
                   </Link>
                 )}
                 {item.subItems && (
+                  /* El max-h acota la animacion de despliegue, asi que tiene que
+                     dar de sobra para el submenu mas largo (Configuracion, hoy
+                     5 items) o los ultimos quedan recortados por el
+                     overflow-hidden. Subir este valor al agregar sub-items. */
                   <ul className={`pl-3 pt-1 overflow-hidden transition-all duration-200 ${
                     (isConfigItem ? configExpanded : true)
-                      ? 'max-h-48 opacity-100'
+                      ? 'max-h-72 opacity-100'
                       : 'max-h-0 opacity-0'
                   }`}>
                     {item.subItems.map(subItem => {

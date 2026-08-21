@@ -18,6 +18,7 @@ import Roles from './pages/configuracion/Roles';
 import Usuarios from './pages/configuracion/Usuarios';
 import Feriados from './pages/configuracion/Feriados';
 import ImpuestosDescuentos from './pages/configuracion/ImpuestosDescuentos';
+import Decretos from './pages/configuracion/Decretos';
 import Contratos from './pages/contratos/Contratos';
 import VacacionesPage from './pages/vacaciones/VacacionesPage';
 import CompensacionesPage from './pages/compensaciones/CompensacionesPage';
@@ -168,6 +169,7 @@ function App() {
           <Route path="/configuracion/usuarios" element={<Usuarios />} />
           <Route path="/configuracion/feriados" element={<Feriados />} />
           <Route path="/configuracion/impuestos" element={<ImpuestosDescuentos />} />
+          <Route path="/configuracion/decretos" element={<Decretos />} />
           {/* Add more private routes here */}
         </Route>
       </Route>

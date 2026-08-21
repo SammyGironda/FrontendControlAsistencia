@@ -5,7 +5,7 @@ import {
   LayoutDashboard, Users, Upload, CalendarCheck,
   FileText, Settings, ClipboardList, LogOut, AlertCircle, FileSignature,
   SlidersHorizontal, Shield, CalendarX, ChevronDown, Palmtree, Clock, UserCog, Network,
-  Percent
+  Percent, TrendingUp
 } from 'lucide-react';
 import useAuthStore from '../../store/authStore';
 import { esAdmin, esGestor } from '../../lib/permisos';
@@ -57,7 +57,11 @@ const navItems = [
       // ofrecerla en el menu.
       { name: 'Usuarios del Sistema', icon: UserCog, path: '/configuracion/usuarios', soloAdmin: true },
       { name: 'Feriados', icon: CalendarX, path: '/configuracion/feriados' },
-      { name: 'Impuestos y Descuentos', icon: Percent, path: '/configuracion/impuestos', soloGestores: true }
+      { name: 'Impuestos y Descuentos', icon: Percent, path: '/configuracion/impuestos', soloGestores: true },
+      // Igual reparto que Impuestos: lectura admin+rrhh, crear/editar solo
+      // admin (require_admin en el backend). El item se muestra a ambos y
+      // DecretoModal/Decretos.jsx ocultan los botones de escritura para rrhh.
+      { name: 'Incrementos Salariales', icon: TrendingUp, path: '/configuracion/decretos', soloGestores: true }
     ]
   },
 ];
@@ -236,11 +240,11 @@ const Sidebar = () => {
                 {item.subItems && (
                   /* El max-h acota la animacion de despliegue, asi que tiene que
                      dar de sobra para el submenu mas largo (Configuracion, hoy
-                     6 items) o los ultimos quedan recortados por el
+                     7 items) o los ultimos quedan recortados por el
                      overflow-hidden. Subir este valor al agregar sub-items. */
                   <ul className={`pl-3 pt-1 overflow-hidden transition-all duration-200 ${
                     (isConfigItem ? configExpanded : true)
-                      ? 'max-h-96 opacity-100'
+                      ? 'max-h-[28rem] opacity-100'
                       : 'max-h-0 opacity-0'
                   }`}>
                     {item.subItems.map(subItem => {

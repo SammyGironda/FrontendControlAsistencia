@@ -35,7 +35,10 @@ const navItems = [
       { name: 'Compensaciones', icon: Clock, path: '/vacaciones/compensaciones', soloGestores: true }
     ]
   },
-  { name: 'Reportes', icon: FileText, path: '/reportes' },
+  // Los 10 endpoints de /api/v1/reportes exigen admin o rrhh desde el
+  // 2026-08-24 (lectura admin+rrhh, escritura admin-only), asi que la pantalla
+  // entera respondia 403 para supervisor/empleado/consulta.
+  { name: 'Reportes', icon: FileText, path: '/reportes', soloGestores: true },
   {
     name: 'Configuración',
     icon: Settings,
@@ -79,14 +82,22 @@ const Sidebar = () => {
   const { data: incidencias = [] } = useIncidenciasPendientes();
   const incidenciasCount = incidencias.length;
 
-  // Sub-items reservados por rol. Ocultarlos es COSMETICO: el guard real esta en
-  // el backend (require_admin / require_roles). Sirve para no ofrecer una
-  // pantalla que respondera 403.
+  // Items reservados por rol, en LOS DOS NIVELES. Ocultarlos es COSMETICO: el
+  // guard real esta en el backend (require_admin / require_roles). Sirve para no
+  // ofrecer una pantalla que respondera 403.
   //
   // Son dos alcances distintos y no intercambiables: `soloGestores` es admin+rrhh
   // (espeja ROLES_GESTORES) y `soloAdmin` es admin a secas. esGestor NO implica
   // esAdmin, asi que un item mal etiquetado se le ofrece a rrhh para que reciba
   // un 403 al entrar.
+  //
+  // OJO: el .filter() de abajo evalua los flags tambien en los items de primer
+  // nivel, y hace falta. Hasta el 2026-08-24 solo se filtraban los sub-items
+  // (el map arrancaba con `if (!item.subItems) return item;`), asi que poner
+  // `soloGestores` en un item sin subItems -- como Reportes -- no hacia
+  // absolutamente nada y el item se le seguia ofreciendo a todos los roles. El
+  // flag se ignoraba en silencio, sin warning: misma clase de bug que el
+  // `children` no declarado del viejo layout/Header.jsx.
   //
   // Cuando no queda ningun sub-item visible hay que borrar la clave, no dejar
   // un array vacio: el render hace `{item.subItems && (<ul>...)}`, asi que un
@@ -95,23 +106,21 @@ const Sidebar = () => {
   const puedeVerDeGestores = esGestor(user);
   const puedeVerDeAdmin = esAdmin(user);
 
-  const itemsVisibles = useMemo(
-    () =>
-      navItems.map((item) => {
-        if (!item.subItems) return item;
+  const itemsVisibles = useMemo(() => {
+    const permitido = (entrada) =>
+      (!entrada.soloGestores || puedeVerDeGestores) &&
+      (!entrada.soloAdmin || puedeVerDeAdmin);
 
-        const subItems = item.subItems.filter(
-          (sub) =>
-            (!sub.soloGestores || puedeVerDeGestores) &&
-            (!sub.soloAdmin || puedeVerDeAdmin)
-        );
+    return navItems.filter(permitido).map((item) => {
+      if (!item.subItems) return item;
 
-        return subItems.length > 0
-          ? { ...item, subItems }
-          : { ...item, subItems: undefined };
-      }),
-    [puedeVerDeGestores, puedeVerDeAdmin]
-  );
+      const subItems = item.subItems.filter(permitido);
+
+      return subItems.length > 0
+        ? { ...item, subItems }
+        : { ...item, subItems: undefined };
+    });
+  }, [puedeVerDeGestores, puedeVerDeAdmin]);
 
   // Depende de la ruta a proposito, y es lo unico que deberia: al entrar a
   // cualquier pantalla de /configuracion el submenu queda desplegado.
